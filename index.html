@@ -543,6 +543,10 @@
                         <label>קישור לשובר דינמי</label>
                         <input type="url" id="dynamicUrl" placeholder="https://...">
                     </div>
+                    <div class="fg" style="margin-top:4px">
+                        <label>CVV / קוד אבטחה <span style="font-weight:400;color:var(--muted);text-transform:none">(אופציונלי)</span></label>
+                        <input type="text" id="cvvInput" placeholder="3-4 ספרות" maxlength="4" inputmode="numeric" autocomplete="off" style="letter-spacing:3px;font-family:monospace;font-size:16px">
+                    </div>
                 </div>
             </div>
             <!-- Progressive Disclosure: Extras -->
@@ -593,6 +597,13 @@
         </div>
         <div id="dynamicZone" style="display:none">
             <button class="dyn-btn" onclick="A.openDynamic()">📲 פתח ברקוד דינמי (חי)</button>
+        </div>
+        <!-- CVV zone -->
+        <div id="cvvZone" style="display:none;margin-bottom:14px">
+            <div style="background:rgba(255,170,0,0.08);border:1px solid rgba(255,170,0,0.25);border-radius:14px;padding:16px;text-align:center">
+                <div style="font-size:11px;color:var(--warn);font-weight:700;margin-bottom:8px;letter-spacing:.4px;text-transform:uppercase">🔒 CVV / קוד אבטחה</div>
+                <div id="coCvv" style="font-size:36px;font-weight:900;letter-spacing:10px;font-family:monospace;color:#fff"></div>
+            </div>
         </div>
         <div class="bal-card">
             <div class="bal-lbl">יתרה נוכחית</div>
@@ -704,6 +715,7 @@ const A = {
         const code = document.getElementById('codeInput').value.trim();
         const dynUrl = document.getElementById('dynamicUrl').value.trim();
         const notes = document.getElementById('notesInput').value.trim();
+        const cvv = document.getElementById('cvvInput').value.trim();
         if (!brand) { this.toast('יש להזין שם חנות', true); return; }
         if (!amt || amt <= 0) { this.toast('יש להזין סכום תקין', true); return; }
         if (!date) { this.toast('יש לבחור תאריך תפוגה', true); return; }
@@ -711,7 +723,8 @@ const A = {
             user_id: this.user.id, brand_name: brand, category: cat,
             type: this.vtype, original_value: amt, current_balance: amt,
             expiry_date: date, code: code || null,
-            dynamic_url: dynUrl || null, notes: notes || null, tags: this.tags
+            dynamic_url: dynUrl || null, notes: notes || null,
+            tags: this.tags, cvv: cvv || null
         };
         const { error } = await this.db.from('vouchers').insert([row]);
         if (error) { this.toast('שגיאה: ' + error.message, true); return; }
@@ -747,7 +760,7 @@ const A = {
     openAdd() { document.getElementById('addModal').classList.add('open'); },
     closeAdd() {
         document.getElementById('addModal').classList.remove('open');
-        ['brandInput','amountInput','dateInput','codeInput','dynamicUrl','notesInput','tagIn']
+        ['brandInput','amountInput','dateInput','codeInput','dynamicUrl','notesInput','tagIn','cvvInput']
             .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
         document.getElementById('categoryInput').value = '';
         this.tags = [];
@@ -826,6 +839,11 @@ const A = {
         const hasSta = !!v.code;
         document.getElementById('staticZone').style.display = hasSta ? 'block' : 'none';
         document.getElementById('dynamicZone').style.display = hasDyn ? 'block' : 'none';
+
+        // CVV
+        const hasCvv = !!v.cvv;
+        document.getElementById('cvvZone').style.display = hasCvv ? 'block' : 'none';
+        if (hasCvv) document.getElementById('coCvv').textContent = v.cvv;
 
         if (hasSta) this._genBarcode(v.code);
 
