@@ -1,1005 +1,1385 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>ארנק שוברים</title>
-    <!-- FIX 1: @import must be FIRST before any CSS rule -->
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap');
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- FIX 2: Real QR + Barcode libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
-    <style>
-        :root {
-            --bg: #000000;
-            --surface: rgba(255,255,255,0.05);
-            --surface-hover: rgba(255,255,255,0.08);
-            --border: rgba(255,255,255,0.08);
-            --accent: #00ff88;
-            --accent-glow: rgba(0,255,136,0.25);
-            --text: #ffffff;
-            --muted: #888888;
-            --danger: #ff4444;
-            --warn: #ffaa00;
-            --r: 16px;
-            --font: 'Heebo', sans-serif;
-        }
-        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-        html, body { height:100%; width:100%; font-family:var(--font); background:var(--bg); color:var(--text); overflow:hidden; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ארנק שוברים</title>
+<style>@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap');</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+<style>
+:root{
+  --bg:#000;--surface:rgba(255,255,255,.05);--surface2:rgba(255,255,255,.08);
+  --border:rgba(255,255,255,.08);--accent:#00ff88;--glow:rgba(0,255,136,.25);
+  --text:#fff;--muted:#888;--danger:#ff4444;--warn:#ffaa00;--archive:#a78bfa;
+  --shared:#00c8ff;--r:16px;--font:'Heebo',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;width:100%;font-family:var(--font);background:var(--bg);color:var(--text);overflow:hidden}
 
-        /* ---- AUTH ---- */
-        #authScreen {
-            position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
-            background:radial-gradient(ellipse at 50% 0%, rgba(0,255,136,0.08) 0%, #000 60%);
-            z-index:1000;
-        }
-        .auth-box {
-            background:rgba(255,255,255,0.04); backdrop-filter:blur(20px);
-            border:1px solid var(--border); border-radius:28px;
-            padding:44px 30px; max-width:370px; width:90%;
-        }
-        .auth-logo { text-align:center; margin-bottom:32px; }
-        .auth-logo .icon { font-size:52px; display:block; margin-bottom:10px; }
-        .auth-logo h1 {
-            font-size:26px; font-weight:900;
-            background:linear-gradient(135deg,var(--accent),#00ffff);
-            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-        }
-        .auth-logo p { font-size:13px; color:var(--muted); margin-top:5px; }
-        .auth-form { display:flex; flex-direction:column; gap:13px; }
-        .auth-form input {
-            padding:13px 15px; background:rgba(255,255,255,0.05);
-            border:1px solid var(--border); border-radius:12px;
-            color:var(--text); font-family:var(--font); font-size:15px;
-            transition:border-color .2s, background .2s;
-        }
-        .auth-form input:focus { outline:none; background:rgba(255,255,255,0.08); border-color:rgba(0,255,136,0.5); }
-        .auth-form input::placeholder { color:var(--muted); }
-        .auth-btn {
-            padding:14px; background:var(--accent); color:#000;
-            border:none; border-radius:12px; font-weight:900;
-            cursor:pointer; font-size:15px; font-family:var(--font);
-            transition:transform .15s, background .2s;
-        }
-        .auth-btn:hover { background:#00dd77; }
-        .auth-btn:active { transform:scale(0.97); }
-        .auth-toggle { text-align:center; font-size:13px; color:var(--muted); }
-        .auth-toggle a { color:var(--accent); cursor:pointer; text-decoration:underline; }
-        .auth-err { color:var(--danger); font-size:12px; text-align:center; min-height:18px; }
-        #registerForm { display:none; }
+/* AUTH */
+#authScreen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 0%,rgba(0,255,136,.08),#000 60%);z-index:1000}
+.auth-box{background:rgba(255,255,255,.04);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:28px;padding:44px 30px;max-width:370px;width:90%}
+.auth-logo{text-align:center;margin-bottom:32px}
+.auth-logo .icon{font-size:52px;display:block;margin-bottom:10px}
+.auth-logo h1{font-size:26px;font-weight:900;background:linear-gradient(135deg,var(--accent),#00ffff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.auth-logo p{font-size:13px;color:var(--muted);margin-top:5px}
+.auth-form{display:flex;flex-direction:column;gap:13px}
+.auth-form input{padding:13px 15px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:var(--font);font-size:15px;transition:border-color .2s,background .2s}
+.auth-form input:focus{outline:none;background:rgba(255,255,255,.08);border-color:rgba(0,255,136,.5)}
+.auth-form input::placeholder{color:var(--muted)}
+.auth-btn{padding:14px;background:var(--accent);color:#000;border:none;border-radius:12px;font-weight:900;cursor:pointer;font-size:15px;font-family:var(--font);transition:transform .15s}
+.auth-btn:active{transform:scale(.97)}
+.auth-toggle{text-align:center;font-size:13px;color:var(--muted)}
+.auth-toggle a{color:var(--accent);cursor:pointer;text-decoration:underline}
+.auth-err{color:var(--danger);font-size:12px;text-align:center;min-height:18px}
+#registerForm{display:none}
 
-        /* ---- APP SHELL ---- */
-        #appScreen { display:none; position:fixed; inset:0; flex-direction:column; }
-        #appScreen.on { display:flex; }
-        #homeTab { display:flex; flex-direction:column; height:100%; }
+/* APP SHELL */
+#appScreen{display:none;position:fixed;inset:0;flex-direction:column}
+#appScreen.on{display:flex}
+.tab-panel{display:flex;flex-direction:column;height:100%}
+.tab-panel.hidden{display:none}
 
-        /* ---- HEADER ---- */
-        .header {
-            padding:52px 20px 14px;
-            background:linear-gradient(to bottom, rgba(0,255,136,0.06), transparent);
-            border-bottom:1px solid var(--border); flex-shrink:0;
-        }
-        .header-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
-        .header-top h1 {
-            font-size:21px; font-weight:900;
-            background:linear-gradient(135deg,var(--accent),#00ffff);
-            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-        }
-        .header-btn {
-            background:var(--surface); border:1px solid var(--border);
-            color:var(--muted); padding:7px 15px; border-radius:8px;
-            cursor:pointer; font-size:12px; font-family:var(--font);
-        }
-        .balance-row { display:flex; align-items:baseline; gap:6px; }
-        .balance-num { font-size:38px; font-weight:900; color:var(--accent); }
-        .balance-sym { font-size:20px; color:var(--accent); }
-        .balance-lbl { font-size:12px; color:var(--muted); margin-top:2px; }
+/* HEADER */
+.header{padding:52px 20px 14px;background:linear-gradient(to bottom,rgba(0,255,136,.06),transparent);border-bottom:1px solid var(--border);flex-shrink:0}
+.header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.header-top h1{font-size:21px;font-weight:900;background:linear-gradient(135deg,var(--accent),#00ffff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:7px 15px;border-radius:8px;cursor:pointer;font-size:12px;font-family:var(--font)}
+.balance-row{display:flex;align-items:baseline;gap:6px}
+.balance-num{font-size:38px;font-weight:900;color:var(--accent)}
+.balance-sym{font-size:20px;color:var(--accent)}
+.balance-lbl{font-size:12px;color:var(--muted);margin-top:2px}
+.wallet-badge{font-size:11px;color:var(--shared);background:rgba(0,200,255,.1);border:1px solid rgba(0,200,255,.25);border-radius:8px;padding:2px 8px;display:inline-block;margin-top:4px}
 
-        /* ---- SEARCH ---- */
-        .search-wrap { padding:12px 20px 0; flex-shrink:0; }
-        .search-input {
-            width:100%; padding:11px 15px 11px 38px;
-            background:var(--surface); border:1px solid var(--border);
-            border-radius:12px; color:var(--text);
-            font-family:var(--font); font-size:14px;
-            background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
-            background-repeat:no-repeat; background-position:left 11px center;
-            transition:border-color .2s;
-        }
-        .search-input:focus { outline:none; border-color:rgba(0,255,136,0.4); }
-        .search-input::placeholder { color:var(--muted); }
+/* SEARCH */
+.search-wrap{padding:12px 20px 0;flex-shrink:0}
+.search-input{width:100%;padding:11px 15px 11px 38px;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:var(--font);font-size:14px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:left 11px center;transition:border-color .2s}
+.search-input:focus{outline:none;border-color:rgba(0,255,136,.4)}
+.search-input::placeholder{color:var(--muted)}
 
-        /* ---- FILTER CHIPS ---- */
-        .filter-bar {
-            display:flex; gap:7px; padding:10px 20px;
-            overflow-x:auto; flex-shrink:0; scrollbar-width:none;
-        }
-        .filter-bar::-webkit-scrollbar { display:none; }
-        .chip {
-            padding:6px 13px; background:var(--surface);
-            border:1px solid var(--border); border-radius:20px;
-            color:var(--muted); font-family:var(--font); font-size:12px;
-            cursor:pointer; white-space:nowrap; flex-shrink:0;
-            transition:all .2s; font-weight:500;
-        }
-        .chip.active {
-            background:rgba(0,255,136,0.14); border-color:rgba(0,255,136,0.4); color:var(--accent);
-        }
+/* FILTER CHIPS */
+.filter-bar{display:flex;gap:7px;padding:10px 20px;overflow-x:auto;flex-shrink:0;scrollbar-width:none}
+.filter-bar::-webkit-scrollbar{display:none}
+.chip{padding:6px 13px;background:var(--surface);border:1px solid var(--border);border-radius:20px;color:var(--muted);font-family:var(--font);font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .2s;font-weight:500}
+.chip.active{background:rgba(0,255,136,.14);border-color:rgba(0,255,136,.4);color:var(--accent)}
 
-        /* ---- CONTENT / LIST ---- */
-        .content { flex:1; overflow-y:auto; padding:12px 20px 100px; }
-        .content::-webkit-scrollbar { width:4px; }
-        .content::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.12); border-radius:4px; }
+/* LIST */
+.content{flex:1;overflow-y:auto;padding:12px 20px 100px}
+.content::-webkit-scrollbar{width:4px}
+.content::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:4px}
 
-        .voucher-card {
-            background:var(--surface); backdrop-filter:blur(8px);
-            border:1px solid var(--border); border-radius:var(--r);
-            padding:14px 16px; margin-bottom:10px;
-            cursor:pointer; transition:all .25s;
-            display:flex; align-items:center; gap:13px;
-            position:relative; overflow:hidden;
-        }
-        .voucher-card::before {
-            content:''; position:absolute; top:0; right:0;
-            width:3px; height:100%; background:var(--accent); opacity:0; transition:opacity .2s;
-        }
-        .voucher-card:hover { background:var(--surface-hover); }
-        .voucher-card:hover::before { opacity:1; }
-        .voucher-card:active { transform:scale(0.99); }
-        .voucher-card.warn { border-color:rgba(255,170,0,.25); }
-        .voucher-card.warn::before { background:var(--warn); opacity:1; }
-        .voucher-card.expired { border-color:rgba(255,68,68,.2); opacity:.55; }
-        .voucher-card.expired::before { background:var(--danger); opacity:1; }
+.voucher-card{background:var(--surface);backdrop-filter:blur(8px);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all .25s;display:flex;align-items:center;gap:13px;position:relative;overflow:hidden}
+.voucher-card::before{content:'';position:absolute;top:0;right:0;width:3px;height:100%;background:var(--accent);opacity:0;transition:opacity .2s}
+.voucher-card:hover{background:var(--surface2)}
+.voucher-card:hover::before{opacity:1}
+.voucher-card:active{transform:scale(.99)}
+.voucher-card.warn::before{background:var(--warn);opacity:1}
+.voucher-card.warn{border-color:rgba(255,170,0,.25)}
+.voucher-card.expired{border-color:rgba(255,68,68,.2);opacity:.55}
+.voucher-card.expired::before{background:var(--danger);opacity:1}
+.voucher-card.archived-card{border-color:rgba(167,139,250,.2);opacity:.7}
+.voucher-card.archived-card::before{background:var(--archive);opacity:1}
+.voucher-card.zeroed::before{background:var(--archive);opacity:1}
+.voucher-card.zeroed{border-color:rgba(167,139,250,.3)}
+/* shared wallet card gets cyan left border */
+.voucher-card.shared-card::after{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--shared)}
 
-        .v-emoji { font-size:30px; flex-shrink:0; }
-        .v-body { flex:1; min-width:0; }
-        .v-name { font-weight:700; font-size:15px; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .v-cat { font-size:12px; color:var(--muted); }
-        .v-tags { display:flex; flex-wrap:wrap; gap:4px; margin-top:5px; }
-        .v-tag { background:rgba(0,255,136,.1); color:var(--accent); border:1px solid rgba(0,255,136,.25); border-radius:5px; padding:1px 6px; font-size:10px; font-weight:700; }
-        .v-right { text-align:left; flex-shrink:0; }
-        .v-bal { font-size:20px; font-weight:900; color:var(--accent); }
-        .expiry-badge {
-            font-size:11px; padding:3px 8px; border-radius:6px;
-            display:inline-block; margin-top:4px;
-            background:rgba(255,255,255,.07); color:var(--muted);
-        }
-        .expiry-badge.soon { background:rgba(255,170,0,.15); color:var(--warn); }
-        .expiry-badge.expired { background:rgba(255,68,68,.15); color:var(--danger); }
-        .v-del {
-            position:absolute; top:10px; left:10px;
-            background:rgba(255,68,68,.15); border:none; color:#ff6666;
-            width:28px; height:28px; border-radius:6px; cursor:pointer;
-            font-size:14px; opacity:0; transition:opacity .2s;
-            display:flex; align-items:center; justify-content:center;
-        }
-        .voucher-card:hover .v-del { opacity:1; }
-        .dyn-dot { width:7px; height:7px; background:#00c8ff; border-radius:50%; display:inline-block; margin-right:4px; }
+.v-emoji{font-size:30px;flex-shrink:0}
+.v-body{flex:1;min-width:0}
+.v-name{font-weight:700;font-size:15px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v-cat{font-size:12px;color:var(--muted)}
+.v-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.v-tag{background:rgba(0,255,136,.1);color:var(--accent);border:1px solid rgba(0,255,136,.25);border-radius:5px;padding:1px 6px;font-size:10px;font-weight:700}
+.v-right{text-align:left;flex-shrink:0}
+.v-bal{font-size:20px;font-weight:900;color:var(--accent)}
+.v-bal.zero{color:var(--archive)}
+.expiry-badge{font-size:11px;padding:3px 8px;border-radius:6px;display:inline-block;margin-top:4px;background:rgba(255,255,255,.07);color:var(--muted)}
+.expiry-badge.soon{background:rgba(255,170,0,.15);color:var(--warn)}
+.expiry-badge.expired{background:rgba(255,68,68,.15);color:var(--danger)}
+.expiry-badge.archive{background:rgba(167,139,250,.15);color:var(--archive)}
+.shared-dot{width:7px;height:7px;background:var(--shared);border-radius:50%;display:inline-block;margin-left:4px;vertical-align:middle}
+.super-badge{font-size:9px;padding:1px 5px;background:rgba(255,170,0,.15);color:var(--warn);border:1px solid rgba(255,170,0,.3);border-radius:4px;margin-right:4px;font-weight:700}
 
-        .empty-state { text-align:center; padding:60px 20px; color:var(--muted); }
-        .empty-state .icon { font-size:52px; margin-bottom:14px; opacity:.6; }
-        .empty-state h3 { font-size:16px; font-weight:700; margin-bottom:6px; color:var(--text); }
-        .empty-state p { font-size:13px; line-height:1.6; }
+/* card action buttons */
+.card-actions{position:absolute;top:8px;left:8px;display:flex;gap:5px;opacity:0;transition:opacity .2s}
+.voucher-card:hover .card-actions{opacity:1}
+.card-btn{width:28px;height:28px;border-radius:6px;border:none;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center}
+.card-btn.del{background:rgba(255,68,68,.15);color:#ff6666}
+.card-btn.edit{background:rgba(0,255,136,.12);color:var(--accent)}
+.card-btn.arch{background:rgba(167,139,250,.15);color:var(--archive)}
 
-        /* ---- BOTTOM NAV ---- */
-        .bottom-nav {
-            position:fixed; bottom:0; left:0; right:0; height:70px;
-            background:rgba(0,0,0,0.92); backdrop-filter:blur(20px);
-            border-top:1px solid var(--border);
-            display:flex; justify-content:space-around; align-items:center;
-            padding-bottom:env(safe-area-inset-bottom,0);
-        }
-        .nav-btn {
-            display:flex; flex-direction:column; align-items:center; gap:3px;
-            color:var(--muted); font-size:11px; cursor:pointer;
-            padding:8px 22px; border-radius:12px; background:none;
-            border:none; font-family:var(--font); transition:color .2s;
-        }
-        .nav-btn svg { width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:1.8; }
-        .nav-btn.active { color:var(--accent); }
+.dup-warn{background:rgba(255,170,0,.12);border:1px solid rgba(255,170,0,.35);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--warn);margin-bottom:14px;display:none}
+.dup-warn.show{display:block}
+.archive-hdr{padding:52px 20px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.archive-hdr h2{font-size:22px;font-weight:900;color:var(--archive)}
+.archive-hdr p{font-size:13px;color:var(--muted);margin-top:4px}
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-state .icon{font-size:52px;margin-bottom:14px;opacity:.6}
+.empty-state h3{font-size:16px;font-weight:700;margin-bottom:6px;color:var(--text)}
+.empty-state p{font-size:13px;line-height:1.6}
 
-        /* ---- FAB ---- */
-        .fab {
-            position:fixed; bottom:80px; left:50%; transform:translateX(-50%);
-            width:56px; height:56px; background:var(--accent); border-radius:17px;
-            border:none; color:#000; font-size:28px; font-weight:900;
-            cursor:pointer; display:flex; align-items:center; justify-content:center;
-            box-shadow:0 0 28px var(--accent-glow), 0 4px 18px rgba(0,0,0,.4);
-            z-index:50; transition:transform .2s, box-shadow .2s;
-        }
-        .fab:hover { transform:translateX(-50%) scale(1.06); }
-        .fab:active { transform:translateX(-50%) scale(0.94); }
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:70px;background:rgba(0,0,0,.92);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;justify-content:space-around;align-items:center;padding-bottom:env(safe-area-inset-bottom,0)}
+.nav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:11px;cursor:pointer;padding:8px 12px;border-radius:12px;background:none;border:none;font-family:var(--font);transition:color .2s;position:relative}
+.nav-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8}
+.nav-btn.active{color:var(--accent)}
+.nav-btn.nav-archive.active{color:var(--archive)}
+.nav-btn.nav-settings.active{color:var(--shared)}
+.nav-notif{position:absolute;top:4px;left:8px;width:8px;height:8px;background:var(--danger);border-radius:50%;display:none}
+.nav-notif.show{display:block}
 
-        /* ---- ADD MODAL ---- */
-        .modal-overlay {
-            display:none; position:fixed; inset:0;
-            background:rgba(0,0,0,.65); backdrop-filter:blur(4px);
-            z-index:100; align-items:flex-end; justify-content:center;
-        }
-        .modal-overlay.open { display:flex; }
-        .modal-sheet {
-            width:100%; max-width:600px; background:#111;
-            border:1px solid var(--border); border-bottom:none;
-            border-radius:24px 24px 0 0;
-            max-height:90vh; overflow-y:auto;
-            animation:slideUp .3s ease;
-        }
-        @keyframes slideUp { from{transform:translateY(40px);opacity:0} to{transform:translateY(0);opacity:1} }
-        .modal-handle { width:36px; height:4px; background:rgba(255,255,255,.18); border-radius:4px; margin:12px auto 0; }
-        .modal-inner { padding:18px 22px 36px; }
-        .modal-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; }
-        .modal-head h2 { font-size:21px; font-weight:900; }
-        .modal-close {
-            background:var(--surface); border:1px solid var(--border);
-            color:var(--muted); width:32px; height:32px; border-radius:8px;
-            cursor:pointer; font-size:17px; display:flex; align-items:center; justify-content:center;
-        }
-        .type-toggle { display:flex; background:var(--surface); border-radius:12px; padding:4px; margin-bottom:20px; gap:4px; }
-        .type-btn {
-            flex:1; padding:10px; background:none; border:none;
-            border-radius:8px; color:var(--muted); font-family:var(--font);
-            font-size:13px; font-weight:700; cursor:pointer; transition:all .2s;
-        }
-        .type-btn.active { background:var(--accent); color:#000; }
+/* FAB */
+.fab{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);width:56px;height:56px;background:var(--accent);border-radius:17px;border:none;color:#000;font-size:28px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 0 28px var(--glow),0 4px 18px rgba(0,0,0,.4);z-index:50;transition:transform .2s,box-shadow .2s}
+.fab:hover{transform:translateX(-50%) scale(1.06)}
+.fab:active{transform:translateX(-50%) scale(.94)}
 
-        .fg { margin-bottom:17px; }
-        .fg label { display:block; font-size:11px; font-weight:700; color:var(--muted); margin-bottom:7px; letter-spacing:.4px; text-transform:uppercase; }
-        .fg input, .fg select, .fg textarea {
-            width:100%; padding:12px 13px;
-            background:var(--surface); border:1px solid var(--border);
-            border-radius:12px; color:var(--text);
-            font-family:var(--font); font-size:14px; transition:border-color .2s;
-        }
-        .fg input:focus, .fg select:focus, .fg textarea:focus { outline:none; background:rgba(255,255,255,.08); border-color:rgba(0,255,136,.5); }
-        .fg input::placeholder, .fg textarea::placeholder { color:var(--muted); }
-        .fg select option { background:#111; }
-        .fg textarea { resize:none; min-height:66px; line-height:1.5; }
-        .fg-row { display:grid; grid-template-columns:1fr 1fr; gap:11px; }
+/* MODALS */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);z-index:100;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-sheet{width:100%;max-width:600px;background:#111;border:1px solid var(--border);border-bottom:none;border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-handle{width:36px;height:4px;background:rgba(255,255,255,.18);border-radius:4px;margin:12px auto 0}
+.modal-inner{padding:18px 22px 36px}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
+.modal-head h2{font-size:21px;font-weight:900}
+.modal-close{background:var(--surface);border:1px solid var(--border);color:var(--muted);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center}
 
-        /* Progressive disclosure sections */
-        .disc-section { margin-bottom:9px; }
-        .disc-btn {
-            display:flex; align-items:center; justify-content:space-between;
-            background:var(--surface); border:1px solid var(--border);
-            border-radius:12px; padding:12px 15px; cursor:pointer;
-            font-size:13px; font-weight:700; color:var(--muted);
-            transition:all .2s; width:100%; font-family:var(--font);
-        }
-        .disc-btn.open { border-radius:12px 12px 0 0; color:var(--text); border-color:rgba(0,255,136,.3); }
-        .disc-chevron { transition:transform .2s; }
-        .disc-btn.open .disc-chevron { transform:rotate(180deg); }
-        .disc-body {
-            display:none; background:rgba(255,255,255,.02);
-            border:1px solid rgba(0,255,136,.18); border-top:none;
-            border-radius:0 0 12px 12px; padding:15px;
-        }
-        .disc-body.open { display:block; }
+.type-toggle{display:flex;background:var(--surface);border-radius:12px;padding:4px;margin-bottom:20px;gap:4px}
+.type-btn{flex:1;padding:10px;background:none;border:none;border-radius:8px;color:var(--muted);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;transition:all .2s}
+.type-btn.active{background:var(--accent);color:#000}
 
-        /* Code type mini-tabs */
-        .code-tabs { display:flex; gap:7px; margin-bottom:12px; }
-        .code-tab {
-            padding:6px 13px; border-radius:8px; border:1px solid var(--border);
-            background:none; color:var(--muted); font-family:var(--font);
-            font-size:12px; font-weight:700; cursor:pointer; transition:all .2s;
-        }
-        .code-tab.active { border-color:rgba(0,255,136,.4); color:var(--accent); background:rgba(0,255,136,.1); }
+.fg{margin-bottom:17px}
+.fg label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:7px;letter-spacing:.4px;text-transform:uppercase}
+.fg input,.fg select,.fg textarea{width:100%;padding:12px 13px;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:var(--font);font-size:14px;transition:border-color .2s}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;background:rgba(255,255,255,.08);border-color:rgba(0,255,136,.5)}
+.fg input::placeholder,.fg textarea::placeholder{color:var(--muted)}
+.fg select option{background:#111}
+.fg textarea{resize:none;min-height:66px;line-height:1.5}
+.fg-row{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.brand-row{display:flex;gap:8px}
+.brand-row .fg{flex:1;margin-bottom:0}
+.brand-add-btn{height:44px;padding:0 14px;background:rgba(0,255,136,.12);border:1px solid rgba(0,255,136,.3);border-radius:12px;color:var(--accent);font-family:var(--font);font-size:18px;cursor:pointer;flex-shrink:0;transition:background .2s;align-self:flex-end}
+.brand-add-btn:hover{background:rgba(0,255,136,.2)}
 
-        /* Tags */
-        .tags-wrap {
-            display:flex; flex-wrap:wrap; gap:6px; min-height:36px; padding:7px;
-            background:var(--surface); border:1px solid var(--border);
-            border-radius:12px; cursor:text;
-        }
-        .tag-pill {
-            background:rgba(0,255,136,.13); color:var(--accent);
-            border:1px solid rgba(0,255,136,.28); border-radius:6px;
-            padding:3px 8px; font-size:12px; font-weight:700;
-            display:flex; align-items:center; gap:4px;
-        }
-        .tag-pill button { background:none; border:none; color:var(--accent); cursor:pointer; font-size:14px; line-height:1; padding:0; }
-        .tag-input { border:none; background:none; outline:none; color:var(--text); font-family:var(--font); font-size:13px; min-width:70px; flex:1; }
+/* multi-select chips */
+.chip-group{display:flex;flex-wrap:wrap;gap:7px}
+.mchip{padding:7px 13px;background:var(--surface);border:1px solid var(--border);border-radius:20px;color:var(--muted);font-family:var(--font);font-size:12px;cursor:pointer;transition:all .2s;font-weight:500;white-space:nowrap}
+.mchip.sel{background:rgba(0,255,136,.15);border-color:rgba(0,255,136,.45);color:var(--accent)}
+.mchip.sel-warn{background:rgba(255,170,0,.12);border-color:rgba(255,170,0,.4);color:var(--warn)}
 
-        .form-actions { display:flex; gap:11px; margin-top:22px; }
-        .btn { flex:1; padding:13px; border:none; border-radius:12px; font-weight:900; cursor:pointer; font-size:14px; font-family:var(--font); transition:transform .15s; }
-        .btn:active { transform:scale(0.97); }
-        .btn-primary { background:var(--accent); color:#000; }
-        .btn-primary:hover { background:#00dd77; }
-        .btn-secondary { background:var(--surface); color:var(--text); border:1px solid var(--border); }
+/* progressive disclosure */
+.disc-section{margin-bottom:9px}
+.disc-btn{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 15px;cursor:pointer;font-size:13px;font-weight:700;color:var(--muted);transition:all .2s;width:100%;font-family:var(--font)}
+.disc-btn.open{border-radius:12px 12px 0 0;color:var(--text);border-color:rgba(0,255,136,.3)}
+.disc-chevron{transition:transform .2s}
+.disc-btn.open .disc-chevron{transform:rotate(180deg)}
+.disc-body{display:none;background:rgba(255,255,255,.02);border:1px solid rgba(0,255,136,.18);border-top:none;border-radius:0 0 12px 12px;padding:15px}
+.disc-body.open{display:block}
+.code-tabs{display:flex;gap:7px;margin-bottom:12px}
+.code-tab{padding:6px 13px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
+.code-tab.active{border-color:rgba(0,255,136,.4);color:var(--accent);background:rgba(0,255,136,.1)}
 
-        /* ---- CHECKOUT SCREEN ---- */
-        #checkoutScreen {
-            display:none; position:fixed; inset:0; background:#000;
-            z-index:200; flex-direction:column; align-items:center; overflow-y:auto;
-        }
-        #checkoutScreen.on { display:flex; }
-        .co-header {
-            width:100%; display:flex; align-items:center;
-            padding:52px 22px 10px; flex-shrink:0;
-        }
-        .co-back {
-            background:var(--surface); border:1px solid var(--border);
-            color:var(--text); width:40px; height:40px; border-radius:10px;
-            cursor:pointer; font-size:20px; display:flex; align-items:center; justify-content:center;
-        }
-        .co-title { flex:1; text-align:center; font-size:17px; font-weight:900; margin-right:40px; }
-        .co-body { width:100%; max-width:400px; padding:4px 22px 44px; flex:1; }
-        .co-brand { text-align:center; margin-bottom:22px; }
-        .co-emoji { font-size:60px; display:block; margin-bottom:9px; }
-        .co-name { font-size:26px; font-weight:900; }
-        .co-cat { font-size:13px; color:var(--muted); margin-top:3px; }
+.tags-wrap{display:flex;flex-wrap:wrap;gap:6px;min-height:36px;padding:7px;background:var(--surface);border:1px solid var(--border);border-radius:12px;cursor:text}
+.tag-pill{background:rgba(0,255,136,.13);color:var(--accent);border:1px solid rgba(0,255,136,.28);border-radius:6px;padding:3px 8px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:4px}
+.tag-pill button{background:none;border:none;color:var(--accent);cursor:pointer;font-size:14px;line-height:1;padding:0}
+.tag-input{border:none;background:none;outline:none;color:var(--text);font-family:var(--font);font-size:13px;min-width:70px;flex:1}
 
-        /* Barcode zone - white card for scanner */
-        .barcode-card {
-            background:#fff; border-radius:16px;
-            padding:22px 18px 14px; text-align:center; margin-bottom:14px;
-        }
-        #barcodeCanvas { max-width:100%; height:auto !important; }
-        .barcode-text { color:#000; font-family:monospace; font-size:14px; font-weight:700; margin-top:9px; letter-spacing:2px; }
-        .dyn-btn {
-            width:100%; padding:15px; margin-bottom:14px;
-            background:linear-gradient(135deg,rgba(0,255,136,.14),rgba(0,200,255,.1));
-            border:1px solid rgba(0,255,136,.3); border-radius:14px;
-            color:var(--accent); font-family:var(--font);
-            font-size:15px; font-weight:900; cursor:pointer; transition:all .2s;
-        }
-        .dyn-btn:hover { background:rgba(0,255,136,.2); }
+.form-actions{display:flex;gap:11px;margin-top:22px}
+.btn{flex:1;padding:13px;border:none;border-radius:12px;font-weight:900;cursor:pointer;font-size:14px;font-family:var(--font);transition:transform .15s}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--accent);color:#000}
+.btn-primary:hover{background:#00dd77}
+.btn-secondary{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+.btn-shared{background:rgba(0,200,255,.14);color:var(--shared);border:1px solid rgba(0,200,255,.3)}
 
-        .bal-card {
-            background:var(--surface); border:1px solid var(--border);
-            border-radius:16px; padding:18px; text-align:center; margin-bottom:14px;
-        }
-        .bal-lbl { font-size:11px; color:var(--muted); margin-bottom:5px; }
-        .bal-num { font-size:46px; font-weight:900; color:var(--accent); line-height:1; }
-        .bal-sub { font-size:12px; color:var(--muted); margin-top:5px; }
+/* CENTER MINI MODAL */
+.center-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:300;align-items:center;justify-content:center}
+.center-modal.open{display:flex}
+.center-box{background:#1a1a1a;border:1px solid var(--border);border-radius:20px;padding:28px 24px;max-width:340px;width:90%;animation:slideUp .25s ease}
+.center-box h3{font-size:18px;font-weight:900;margin-bottom:6px}
+.center-box p{font-size:13px;color:var(--muted);margin-bottom:18px}
+.center-box input{width:100%;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:var(--font);font-size:14px;margin-bottom:14px}
+.center-box input:focus{outline:none;border-color:rgba(0,255,136,.5)}
+.center-actions{display:flex;gap:10px}
 
-        .redeem-card {
-            background:var(--surface); border:1px solid var(--border);
-            border-radius:16px; padding:18px;
-        }
-        .redeem-card label { display:block; font-size:12px; color:var(--muted); margin-bottom:9px; font-weight:700; }
-        .redeem-input {
-            width:100%; padding:13px; background:rgba(255,255,255,.06);
-            border:1px solid var(--border); border-radius:10px;
-            color:var(--text); font-size:18px; text-align:center;
-            font-family:var(--font); font-weight:700; margin-bottom:11px;
-            transition:border-color .2s;
-        }
-        .redeem-input:focus { outline:none; border-color:rgba(0,255,136,.5); }
+/* CHECKOUT */
+#checkoutScreen{display:none;position:fixed;inset:0;background:#000;z-index:200;flex-direction:column;align-items:center;overflow-y:auto}
+#checkoutScreen.on{display:flex}
+.co-header{width:100%;display:flex;align-items:center;padding:52px 22px 10px;flex-shrink:0}
+.co-back{background:var(--surface);border:1px solid var(--border);color:var(--text);width:40px;height:40px;border-radius:10px;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center}
+.co-title{flex:1;text-align:center;font-size:17px;font-weight:900;margin-right:40px}
+.co-body{width:100%;max-width:400px;padding:4px 22px 44px;flex:1}
+.co-brand{text-align:center;margin-bottom:22px}
+.co-emoji{font-size:60px;display:block;margin-bottom:9px}
+.co-name{font-size:26px;font-weight:900}
+.co-cat{font-size:13px;color:var(--muted);margin-top:3px}
+.co-accepted{font-size:12px;color:var(--warn);margin-top:6px;line-height:1.5}
+.barcode-card{background:#fff;border-radius:16px;padding:22px 18px 14px;text-align:center;margin-bottom:14px}
+#barcodeCanvas{max-width:100%;height:auto !important}
+.barcode-text{color:#000;font-family:monospace;font-size:14px;font-weight:700;margin-top:9px;letter-spacing:2px}
+.dyn-btn{width:100%;padding:15px;margin-bottom:14px;background:linear-gradient(135deg,rgba(0,255,136,.14),rgba(0,200,255,.1));border:1px solid rgba(0,255,136,.3);border-radius:14px;color:var(--accent);font-family:var(--font);font-size:15px;font-weight:900;cursor:pointer;transition:all .2s}
+.bal-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;text-align:center;margin-bottom:14px}
+.bal-lbl{font-size:11px;color:var(--muted);margin-bottom:5px}
+.bal-num{font-size:46px;font-weight:900;color:var(--accent);line-height:1}
+.bal-sub{font-size:12px;color:var(--muted);margin-top:5px}
+.redeem-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px}
+.redeem-card label{display:block;font-size:12px;color:var(--muted);margin-bottom:9px;font-weight:700}
+.redeem-input{width:100%;padding:13px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:18px;text-align:center;font-family:var(--font);font-weight:700;margin-bottom:11px;transition:border-color .2s}
+.redeem-input:focus{outline:none;border-color:rgba(0,255,136,.5)}
+.archive-btn-co{width:100%;padding:13px;margin-top:10px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);border-radius:12px;color:var(--archive);font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;transition:all .2s}
+.offline-warn{background:rgba(255,170,0,.12);border:1px solid rgba(255,170,0,.35);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--warn);margin-bottom:12px;display:none;text-align:center}
+.offline-warn.show{display:block}
 
-        /* ---- STATS SCREEN ---- */
-        #statsScreen {
-            display:none; position:absolute; inset:0;
-            flex-direction:column; background:var(--bg); overflow-y:auto; padding-bottom:80px;
-        }
-        #statsScreen.on { display:flex; }
-        .stats-header { padding:52px 20px 14px; border-bottom:1px solid var(--border); flex-shrink:0; }
-        .stats-header h2 { font-size:23px; font-weight:900; }
-        .stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:11px; padding:15px 20px; }
-        .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:17px; }
-        .stat-val { font-size:28px; font-weight:900; color:var(--accent); }
-        .stat-lbl { font-size:12px; color:var(--muted); margin-top:3px; }
-        .stat-card.wide { grid-column:1/-1; }
-        .cat-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:13px; }
-        .cat-bar { height:4px; background:rgba(255,255,255,.1); border-radius:4px; overflow:hidden; margin-bottom:13px; }
-        .cat-fill { height:100%; background:var(--accent); border-radius:4px; }
+/* SETTINGS SCREEN */
+#settingsScreen{display:none;position:absolute;inset:0;flex-direction:column;background:var(--bg);overflow-y:auto;padding-bottom:80px}
+#settingsScreen.on{display:flex}
+.settings-header{padding:52px 20px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.settings-header h2{font-size:23px;font-weight:900;color:var(--shared)}
+.settings-body{padding:20px}
+.settings-section{margin-bottom:28px}
+.settings-section h3{font-size:14px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px}
+.wallet-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:10px}
+.wallet-name{font-size:17px;font-weight:900;margin-bottom:4px}
+.wallet-meta{font-size:12px;color:var(--muted)}
+.wallet-card.active-wallet{border-color:rgba(0,200,255,.35);background:rgba(0,200,255,.06)}
+.wallet-card.active-wallet .wallet-name{color:var(--shared)}
+.member-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.member-row:last-child{border-bottom:none}
+.member-avatar{width:36px;height:36px;border-radius:10px;background:rgba(0,200,255,.15);color:var(--shared);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.member-info{flex:1;min-width:0}
+.member-email{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.member-status{font-size:11px;color:var(--muted);margin-top:2px}
+.member-status.owner{color:var(--accent)}
+.member-status.pending{color:var(--warn)}
+.member-remove{background:rgba(255,68,68,.12);border:none;color:#ff6666;padding:5px 10px;border-radius:7px;cursor:pointer;font-size:12px;font-family:var(--font)}
+.invite-row{display:flex;gap:8px;margin-top:14px}
+.invite-row input{flex:1;padding:11px 13px;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:var(--font);font-size:14px}
+.invite-row input:focus{outline:none;border-color:rgba(0,200,255,.5)}
+.invite-btn{padding:11px 18px;background:rgba(0,200,255,.14);border:1px solid rgba(0,200,255,.3);border-radius:12px;color:var(--shared);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+/* invitation banner */
+.invite-banner{background:rgba(0,200,255,.08);border:1px solid rgba(0,200,255,.25);border-radius:14px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;gap:12px}
+.invite-banner .inv-icon{font-size:24px;flex-shrink:0}
+.invite-banner .inv-body{flex:1;min-width:0}
+.invite-banner .inv-body p{font-size:13px;color:var(--muted);margin-top:2px}
+.invite-banner .inv-actions{display:flex;gap:7px;margin-top:10px}
+.inv-accept{padding:7px 14px;background:rgba(0,255,136,.15);border:1px solid rgba(0,255,136,.3);border-radius:8px;color:var(--accent);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer}
+.inv-decline{padding:7px 14px;background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.2);border-radius:8px;color:#ff6666;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer}
 
-        /* ---- TOAST ---- */
-        .toast {
-            position:fixed; bottom:88px; left:50%;
-            transform:translateX(-50%) translateY(20px);
-            background:rgba(0,255,136,.14); backdrop-filter:blur(10px);
-            border:1px solid rgba(0,255,136,.3); color:var(--accent);
-            padding:11px 18px; border-radius:12px; font-size:13px; font-weight:700;
-            opacity:0; pointer-events:none; transition:all .3s; z-index:999; white-space:nowrap;
-        }
-        .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-        .toast.err { background:rgba(255,68,68,.14); border-color:rgba(255,68,68,.3); color:var(--danger); }
-    </style>
+/* STATS */
+#statsScreen{display:none;position:absolute;inset:0;flex-direction:column;background:var(--bg);overflow-y:auto;padding-bottom:80px}
+#statsScreen.on{display:flex}
+.stats-header{padding:52px 20px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.stats-header h2{font-size:23px;font-weight:900}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;padding:15px 20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:17px}
+.stat-val{font-size:28px;font-weight:900;color:var(--accent)}
+.stat-lbl{font-size:12px;color:var(--muted);margin-top:3px}
+.stat-card.wide{grid-column:1/-1}
+.cat-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:13px}
+.cat-bar{height:4px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden;margin-bottom:13px}
+.cat-fill{height:100%;background:var(--accent);border-radius:4px}
+
+/* TOAST */
+.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(0,255,136,.14);backdrop-filter:blur(10px);border:1px solid rgba(0,255,136,.3);color:var(--accent);padding:11px 18px;border-radius:12px;font-size:13px;font-weight:700;opacity:0;pointer-events:none;transition:all .3s;z-index:999;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.err{background:rgba(255,68,68,.14);border-color:rgba(255,68,68,.3);color:var(--danger)}
+.dyn-dot{width:7px;height:7px;background:#00c8ff;border-radius:50%;display:inline-block;margin-right:4px}
+</style>
 </head>
 <body>
 
 <!-- AUTH -->
 <div id="authScreen">
-    <div class="auth-box">
-        <div class="auth-logo">
-            <span class="icon">🎟️</span>
-            <h1>ארנק שוברים</h1>
-            <p>נהל את כל השוברים שלך במקום אחד</p>
-        </div>
-        <div class="auth-form" id="loginForm">
-            <input type="email" id="loginEmail" placeholder="אימייל" autocomplete="email">
-            <input type="password" id="loginPassword" placeholder="סיסמה" autocomplete="current-password">
-            <div class="auth-err" id="loginErr"></div>
-            <button class="auth-btn" onclick="A.login()">התחבר</button>
-            <div class="auth-toggle">אין חשבון? <a onclick="A.switchForm('reg')">הירשם בחינם</a></div>
-        </div>
-        <div class="auth-form" id="registerForm">
-            <input type="email" id="regEmail" placeholder="אימייל" autocomplete="email">
-            <input type="password" id="regPass" placeholder="סיסמה" autocomplete="new-password">
-            <input type="password" id="regPass2" placeholder="אימות סיסמה" autocomplete="new-password">
-            <div class="auth-err" id="regErr"></div>
-            <button class="auth-btn" onclick="A.register()">הירשם</button>
-            <div class="auth-toggle">יש חשבון? <a onclick="A.switchForm('login')">התחבר</a></div>
-        </div>
+  <div class="auth-box">
+    <div class="auth-logo"><span class="icon">🎟️</span><h1>ארנק שוברים</h1><p>נהל את כל השוברים שלך במקום אחד</p></div>
+    <div class="auth-form" id="loginForm">
+      <input type="email" id="loginEmail" placeholder="אימייל" autocomplete="email">
+      <input type="password" id="loginPassword" placeholder="סיסמה" autocomplete="current-password">
+      <div class="auth-err" id="loginErr"></div>
+      <button class="auth-btn" onclick="A.login()">התחבר</button>
+      <div class="auth-toggle">אין חשבון? <a onclick="A.switchForm('reg')">הירשם בחינם</a></div>
     </div>
+    <div class="auth-form" id="registerForm">
+      <input type="email" id="regEmail" placeholder="אימייל" autocomplete="email">
+      <input type="password" id="regPass" placeholder="סיסמה" autocomplete="new-password">
+      <input type="password" id="regPass2" placeholder="אימות סיסמה" autocomplete="new-password">
+      <div class="auth-err" id="regErr"></div>
+      <button class="auth-btn" onclick="A.register()">הירשם</button>
+      <div class="auth-toggle">יש חשבון? <a onclick="A.switchForm('login')">התחבר</a></div>
+    </div>
+  </div>
 </div>
 
 <!-- APP -->
 <div id="appScreen">
-    <!-- HOME TAB -->
-    <div id="homeTab">
-        <div class="header">
-            <div class="header-top">
-                <h1>🎟️ ארנק שוברים</h1>
-                <button class="header-btn" onclick="A.logout()">יציאה</button>
-            </div>
-            <div class="balance-row">
-                <span class="balance-sym">₪</span>
-                <span class="balance-num" id="totalBalance">0</span>
-            </div>
-            <div class="balance-lbl">סך יתרה פנויה</div>
-        </div>
-        <div class="search-wrap">
-            <input type="search" class="search-input" id="searchInput" placeholder="חפש לפי שם, קטגוריה או תגית..." oninput="A.render()">
-        </div>
-        <div class="filter-bar">
-            <button class="chip active" data-f="הכל" onclick="A.setFilter('הכל')">הכל</button>
-            <button class="chip" data-f="פג תוקף קרוב" onclick="A.setFilter('פג תוקף קרוב')">⚠️ פג תוקף קרוב</button>
-            <button class="chip" data-f="אופנה" onclick="A.setFilter('אופנה')">👗 אופנה</button>
-            <button class="chip" data-f="מסעדות" onclick="A.setFilter('מסעדות')">🍽️ מסעדות</button>
-            <button class="chip" data-f="קניות" onclick="A.setFilter('קניות')">🛍️ קניות</button>
-            <button class="chip" data-f="פנאי" onclick="A.setFilter('פנאי')">🎯 פנאי</button>
-            <button class="chip" data-f="ספורט" onclick="A.setFilter('ספורט')">💪 ספורט</button>
-            <button class="chip" data-f="יופי" onclick="A.setFilter('יופי')">💄 יופי</button>
-        </div>
-        <div class="content" id="vouchersList"></div>
-    </div>
 
-    <!-- STATS TAB -->
-    <div id="statsScreen">
-        <div class="stats-header"><h2>📊 סטטיסטיקות</h2></div>
-        <div id="statsContent"></div>
+  <!-- HOME TAB -->
+  <div id="homeTab" class="tab-panel">
+    <div class="header">
+      <div class="header-top"><h1>🎟️ ארנק שוברים</h1><button class="header-btn" onclick="A.logout()">יציאה</button></div>
+      <div class="balance-row"><span class="balance-sym">₪</span><span class="balance-num" id="totalBalance">0</span></div>
+      <div class="balance-lbl">סך יתרה פנויה</div>
+      <div id="walletBadge" class="wallet-badge" style="display:none"></div>
     </div>
+    <div class="search-wrap">
+      <input type="search" class="search-input" id="searchInput" placeholder="חפש לפי שם, קוד, קטגוריה, חנות..." oninput="A.render()">
+    </div>
+    <div class="filter-bar">
+      <button class="chip active" data-f="הכל" onclick="A.setFilter('הכל')">הכל</button>
+      <button class="chip" data-f="פג תוקף קרוב" onclick="A.setFilter('פג תוקף קרוב')">⚠️ פג תוקף קרוב</button>
+      <button class="chip" data-f="משותף" onclick="A.setFilter('משותף')">👥 משותף</button>
+      <button class="chip" data-f="אופנה" onclick="A.setFilter('אופנה')">👗 אופנה</button>
+      <button class="chip" data-f="מסעדות" onclick="A.setFilter('מסעדות')">🍽️ מסעדות</button>
+      <button class="chip" data-f="קניות" onclick="A.setFilter('קניות')">🛍️ קניות</button>
+      <button class="chip" data-f="פנאי" onclick="A.setFilter('פנאי')">🎯 פנאי</button>
+      <button class="chip" data-f="ספורט" onclick="A.setFilter('ספורט')">💪 ספורט</button>
+      <button class="chip" data-f="יופי" onclick="A.setFilter('יופי')">💄 יופי</button>
+    </div>
+    <div class="content" id="vouchersList"></div>
+  </div>
 
-    <!-- NAV + FAB -->
-    <nav class="bottom-nav">
-        <button class="nav-btn active" id="navHome" onclick="A.showTab('home')">
-            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            בית
-        </button>
-        <button class="nav-btn" id="navStats" onclick="A.showTab('stats')">
-            <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-            פעילות
-        </button>
-    </nav>
-    <button class="fab" onclick="A.openAdd()">+</button>
+  <!-- ARCHIVE TAB -->
+  <div id="archiveTab" class="tab-panel hidden">
+    <div class="archive-hdr"><h2>🗄️ ארכיון</h2><p>שוברים שנוצלו במלואם</p></div>
+    <div class="content" id="archiveList"></div>
+  </div>
+
+  <!-- STATS TAB -->
+  <div id="statsScreen">
+    <div class="stats-header"><h2>📊 סטטיסטיקות</h2></div>
+    <div id="statsContent"></div>
+  </div>
+
+  <!-- SETTINGS TAB -->
+  <div id="settingsScreen">
+    <div class="settings-header"><h2>⚙️ הגדרות ארנק</h2></div>
+    <div class="settings-body" id="settingsBody">טוען...</div>
+  </div>
+
+  <!-- NAV + FAB -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" id="navHome" onclick="A.showTab('home')">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>בית
+    </button>
+    <button class="nav-btn nav-archive" id="navArchive" onclick="A.showTab('archive')">
+      <svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>ארכיון
+    </button>
+    <button class="nav-btn" id="navStats" onclick="A.showTab('stats')">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>פעילות
+    </button>
+    <button class="nav-btn nav-settings" id="navSettings" onclick="A.showTab('settings')">
+      <div class="nav-notif" id="inviteNotif"></div>
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>ארנק
+    </button>
+  </nav>
+  <button class="fab" id="mainFab" onclick="A.openAdd()">+</button>
 </div>
 
-<!-- ADD MODAL -->
+<!-- ADD/EDIT MODAL -->
 <div class="modal-overlay" id="addModal">
-    <div class="modal-sheet">
-        <div class="modal-handle"></div>
-        <div class="modal-inner">
-            <div class="modal-head">
-                <h2>➕ הוסף שובר</h2>
-                <button class="modal-close" onclick="A.closeAdd()">✕</button>
-            </div>
-            <div class="type-toggle">
-                <button class="type-btn active" id="typeV" onclick="A.setType('voucher')">🎟️ שובר כספי</button>
-                <button class="type-btn" id="typeC" onclick="A.setType('coupon')">🏷️ קופון הנחה</button>
-            </div>
-            <div class="fg">
-                <label>חנות / רשת *</label>
-                <input type="text" id="brandInput" placeholder="פוקס, זארה, BuyMe..." list="blist" autocomplete="off">
-                <datalist id="blist">
-                    <option value="פוקס"><option value="קסטרו"><option value="זארה">
-                    <option value="H&M"><option value="BuyMe"><option value="תו הזהב">
-                    <option value="נופשונית"><option value="רמי לוי"><option value="שופרסל">
-                    <option value="אקסטרה"><option value="מקדונלד's"><option value="קפה קפה">
-                </datalist>
-            </div>
-            <div class="fg">
-                <label>קטגוריה</label>
-                <select id="categoryInput">
-                    <option value="">בחר קטגוריה</option>
-                    <option value="אופנה">👗 אופנה</option>
-                    <option value="מסעדות">🍽️ מסעדות</option>
-                    <option value="קניות">🛍️ קניות</option>
-                    <option value="פנאי">🎯 פנאי</option>
-                    <option value="ספורט">💪 ספורט</option>
-                    <option value="יופי">💄 יופי</option>
-                    <option value="אחר">📦 אחר</option>
-                </select>
-            </div>
-            <div class="fg-row">
-                <div class="fg">
-                    <label id="amtLabel">יתרה (₪) *</label>
-                    <input type="number" id="amountInput" placeholder="500" min="0">
-                </div>
-                <div class="fg">
-                    <label>תאריך תפוגה *</label>
-                    <input type="date" id="dateInput">
-                </div>
-            </div>
-            <!-- Progressive Disclosure: Code -->
-            <div class="disc-section" id="secCode">
-                <button class="disc-btn" onclick="A.toggleDisc('secCode')">
-                    <span>🔑 פרטי מימוש (קוד / קישור)</span>
-                    <span class="disc-chevron">▾</span>
-                </button>
-                <div class="disc-body">
-                    <div class="code-tabs">
-                        <button class="code-tab active" id="ctStatic" onclick="A.setCodeType('static')">קוד סטטי</button>
-                        <button class="code-tab" id="ctDynamic" onclick="A.setCodeType('dynamic')">קישור דינמי (OTP)</button>
-                    </div>
-                    <div id="staticField" class="fg">
-                        <label>קוד אלפא-נומרי</label>
-                        <input type="text" id="codeInput" placeholder="ABC123456">
-                    </div>
-                    <div id="dynamicField" class="fg" style="display:none">
-                        <label>קישור לשובר דינמי</label>
-                        <input type="url" id="dynamicUrl" placeholder="https://...">
-                    </div>
-                    <div class="fg" style="margin-top:4px">
-                        <label>CVV / קוד אבטחה <span style="font-weight:400;color:var(--muted);text-transform:none">(אופציונלי)</span></label>
-                        <input type="text" id="cvvInput" placeholder="3-4 ספרות" maxlength="4" inputmode="numeric" autocomplete="off" style="letter-spacing:3px;font-family:monospace;font-size:16px">
-                    </div>
-                </div>
-            </div>
-            <!-- Progressive Disclosure: Extras -->
-            <div class="disc-section" id="secExtras" style="margin-top:9px">
-                <button class="disc-btn" onclick="A.toggleDisc('secExtras')">
-                    <span>🏷️ תגיות והערות</span>
-                    <span class="disc-chevron">▾</span>
-                </button>
-                <div class="disc-body">
-                    <div class="fg">
-                        <label>תגיות (לחץ Enter להוספה)</label>
-                        <div class="tags-wrap" id="tagsWrap" onclick="document.getElementById('tagIn').focus()">
-                            <input class="tag-input" id="tagIn" placeholder="מתנה לחג, חיצוני..." onkeydown="A.handleTag(event)">
-                        </div>
-                    </div>
-                    <div class="fg">
-                        <label>הערות</label>
-                        <textarea id="notesInput" placeholder="מגבלות שימוש, מקור השובר..."></textarea>
-                    </div>
-                </div>
-            </div>
-            <div class="form-actions">
-                <button class="btn btn-secondary" onclick="A.closeAdd()">ביטול</button>
-                <button class="btn btn-primary" onclick="A.addVoucher()">הוסף שובר</button>
-            </div>
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-inner">
+      <div class="modal-head">
+        <h2 id="modalTitle">➕ הוסף שובר</h2>
+        <button class="modal-close" onclick="A.closeAdd()">✕</button>
+      </div>
+      <div class="dup-warn" id="dupWarn">⚠️ שובר עם קוד זה כבר קיים בארנק שלך!</div>
+      <div class="type-toggle">
+        <button class="type-btn active" id="typeV" onclick="A.setType('voucher')">🎟️ שובר כספי</button>
+        <button class="type-btn" id="typeC" onclick="A.setType('coupon')">🏷️ קופון הנחה</button>
+      </div>
+
+      <!-- BRAND -->
+      <div class="fg" style="margin-bottom:17px">
+        <label>חנות / רשת *</label>
+        <div class="brand-row">
+          <div class="fg" style="margin-bottom:0">
+            <input type="text" id="brandInput" placeholder="פוקס, זארה, BuyMe..." list="blist" autocomplete="off" oninput="A.onBrandInput()">
+            <datalist id="blist"></datalist>
+          </div>
+          <button class="brand-add-btn" onclick="A.openBrandModal()" title="הוסף חנות חדשה">+</button>
         </div>
+      </div>
+
+      <!-- SUPER-BRAND accepted stores section -->
+      <div id="superBrandSection" style="display:none;margin-bottom:17px">
+        <div style="background:rgba(255,170,0,.06);border:1px solid rgba(255,170,0,.2);border-radius:14px;padding:14px">
+          <div style="font-size:11px;font-weight:700;color:var(--warn);margin-bottom:10px;text-transform:uppercase;letter-spacing:.4px">⭐ שובר-על — באילו רשתות תקף?</div>
+          <div class="chip-group" id="acceptedBrandsChips"></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:8px">בחר את הרשתות המכבדות שובר זה</div>
+        </div>
+      </div>
+
+      <!-- CATEGORIES multi-select -->
+      <div class="fg">
+        <label>קטגוריות <span style="font-weight:400;color:var(--muted);text-transform:none">(בחירה מרובה)</span></label>
+        <div class="chip-group" id="catChips">
+          <div class="mchip" data-cat="אופנה" onclick="A.toggleCat('אופנה')">👗 אופנה</div>
+          <div class="mchip" data-cat="מסעדות" onclick="A.toggleCat('מסעדות')">🍽️ מסעדות</div>
+          <div class="mchip" data-cat="קניות" onclick="A.toggleCat('קניות')">🛍️ קניות</div>
+          <div class="mchip" data-cat="פנאי" onclick="A.toggleCat('פנאי')">🎯 פנאי</div>
+          <div class="mchip" data-cat="ספורט" onclick="A.toggleCat('ספורט')">💪 ספורט</div>
+          <div class="mchip" data-cat="יופי" onclick="A.toggleCat('יופי')">💄 יופי</div>
+          <div class="mchip" data-cat="אחר" onclick="A.toggleCat('אחר')">📦 אחר</div>
+        </div>
+      </div>
+
+      <div class="fg-row">
+        <div class="fg"><label id="amtLabel">יתרה (₪) *</label><input type="number" id="amountInput" placeholder="500" min="0"></div>
+        <div class="fg"><label>תאריך תפוגה</label><input type="date" id="dateInput"></div>
+      </div>
+
+      <!-- WALLET SELECTOR (shown when user has shared wallets) -->
+      <div class="fg" id="walletSelectorFg" style="display:none">
+        <label>ארנק</label>
+        <select id="walletSelector"></select>
+      </div>
+
+      <!-- Progressive Disclosure: Code -->
+      <div class="disc-section" id="secCode">
+        <button class="disc-btn" onclick="A.toggleDisc('secCode')">
+          <span>🔑 פרטי מימוש (קוד / קישור)</span><span class="disc-chevron">▾</span>
+        </button>
+        <div class="disc-body">
+          <div class="code-tabs">
+            <button class="code-tab active" id="ctStatic" onclick="A.setCodeType('static')">קוד סטטי</button>
+            <button class="code-tab" id="ctDynamic" onclick="A.setCodeType('dynamic')">קישור דינמי (OTP)</button>
+          </div>
+          <div id="staticField" class="fg"><label>קוד אלפא-נומרי</label><input type="text" id="codeInput" placeholder="ABC123456" oninput="A.checkDup()"></div>
+          <div id="dynamicField" class="fg" style="display:none"><label>קישור לשובר דינמי</label><input type="url" id="dynamicUrl" placeholder="https://..."></div>
+          <div class="fg" style="margin-top:4px">
+            <label>CVV / קוד אבטחה <span style="font-weight:400;color:var(--muted);text-transform:none">(אופציונלי)</span></label>
+            <input type="text" id="cvvInput" placeholder="3-4 ספרות" maxlength="4" inputmode="numeric" autocomplete="off" style="letter-spacing:3px;font-family:monospace;font-size:16px">
+          </div>
+        </div>
+      </div>
+
+      <!-- Progressive Disclosure: Extras -->
+      <div class="disc-section" id="secExtras" style="margin-top:9px">
+        <button class="disc-btn" onclick="A.toggleDisc('secExtras')">
+          <span>🏷️ תגיות והערות</span><span class="disc-chevron">▾</span>
+        </button>
+        <div class="disc-body">
+          <div class="fg">
+            <label>תגיות (לחץ Enter)</label>
+            <div class="tags-wrap" id="tagsWrap" onclick="document.getElementById('tagIn').focus()">
+              <input class="tag-input" id="tagIn" placeholder="מתנה לחג..." onkeydown="A.handleTag(event)">
+            </div>
+          </div>
+          <div class="fg"><label>הערות</label><textarea id="notesInput" placeholder="מגבלות שימוש, מקור..."></textarea></div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-secondary" onclick="A.closeAdd()">ביטול</button>
+        <button class="btn btn-primary" id="saveBtn" onclick="A.saveVoucher()">הוסף שובר</button>
+      </div>
     </div>
+  </div>
+</div>
+
+<!-- ADD BRAND MODAL -->
+<div class="center-modal" id="brandModal">
+  <div class="center-box">
+    <h3>➕ הוסף חנות חדשה</h3>
+    <p>החנות תישמר ברשימת הבחירה שלך</p>
+    <input type="text" id="newBrandInput" placeholder="שם החנות...">
+    <div class="center-actions">
+      <button class="btn btn-secondary" style="flex:1" onclick="A.closeBrandModal()">ביטול</button>
+      <button class="btn btn-primary" style="flex:1" onclick="A.saveBrand()">הוסף</button>
+    </div>
+  </div>
 </div>
 
 <!-- CHECKOUT -->
 <div id="checkoutScreen">
-    <div class="co-header">
-        <button class="co-back" onclick="A.closeCheckout()">←</button>
-        <div class="co-title">סריקה בקופה</div>
+  <div class="co-header">
+    <button class="co-back" onclick="A.closeCheckout()">←</button>
+    <div class="co-title">סריקה בקופה</div>
+  </div>
+  <div class="co-body">
+    <div class="co-brand">
+      <span class="co-emoji" id="coEmoji">🏪</span>
+      <div class="co-name" id="coName"></div>
+      <div class="co-cat" id="coCat"></div>
+      <div class="co-accepted" id="coAccepted" style="display:none"></div>
     </div>
-    <div class="co-body">
-        <div class="co-brand">
-            <span class="co-emoji" id="coEmoji">🏪</span>
-            <div class="co-name" id="coName"></div>
-            <div class="co-cat" id="coCat"></div>
-        </div>
-        <div id="staticZone">
-            <div class="barcode-card">
-                <canvas id="barcodeCanvas"></canvas>
-                <div id="qrZone"></div>
-                <div class="barcode-text" id="coCode"></div>
-            </div>
-        </div>
-        <div id="dynamicZone" style="display:none">
-            <button class="dyn-btn" onclick="A.openDynamic()">📲 פתח ברקוד דינמי (חי)</button>
-        </div>
-        <!-- CVV zone -->
-        <div id="cvvZone" style="display:none;margin-bottom:14px">
-            <div style="background:rgba(255,170,0,0.08);border:1px solid rgba(255,170,0,0.25);border-radius:14px;padding:16px;text-align:center">
-                <div style="font-size:11px;color:var(--warn);font-weight:700;margin-bottom:8px;letter-spacing:.4px;text-transform:uppercase">🔒 CVV / קוד אבטחה</div>
-                <div id="coCvv" style="font-size:36px;font-weight:900;letter-spacing:10px;font-family:monospace;color:#fff"></div>
-            </div>
-        </div>
-        <div class="bal-card">
-            <div class="bal-lbl">יתרה נוכחית</div>
-            <div class="bal-num" id="coBal">₪0</div>
-            <div class="bal-sub" id="coSub"></div>
-        </div>
-        <div class="redeem-card">
-            <label>עדכן לאחר תשלום — כמה הוצא?</label>
-            <input class="redeem-input" type="number" id="redeemInput" placeholder="₪ הסכום שהוצא" min="1">
-            <button class="btn btn-primary" style="width:100%" onclick="A.redeem()">✅ עדכן יתרה</button>
-        </div>
+    <div class="offline-warn" id="offlineWarn">⚡ אין חיבור לאינטרנט — לא ניתן לעדכן שובר משותף</div>
+    <div id="staticZone">
+      <div class="barcode-card"><canvas id="barcodeCanvas"></canvas><div id="qrZone"></div><div class="barcode-text" id="coCode"></div></div>
     </div>
+    <div id="dynamicZone" style="display:none">
+      <button class="dyn-btn" onclick="A.openDynamic()">📲 פתח ברקוד דינמי (חי)</button>
+    </div>
+    <div id="cvvZone" style="display:none;margin-bottom:14px">
+      <div style="background:rgba(255,170,0,.08);border:1px solid rgba(255,170,0,.25);border-radius:14px;padding:16px;text-align:center">
+        <div style="font-size:11px;color:var(--warn);font-weight:700;margin-bottom:8px;letter-spacing:.4px;text-transform:uppercase">🔒 CVV</div>
+        <div id="coCvv" style="font-size:36px;font-weight:900;letter-spacing:10px;font-family:monospace"></div>
+      </div>
+    </div>
+    <div class="bal-card">
+      <div class="bal-lbl">יתרה נוכחית</div>
+      <div class="bal-num" id="coBal">₪0</div>
+      <div class="bal-sub" id="coSub"></div>
+    </div>
+    <div class="redeem-card">
+      <label>עדכן לאחר תשלום — כמה הוצא?</label>
+      <input class="redeem-input" type="number" id="redeemInput" placeholder="₪ הסכום שהוצא" min="1">
+      <button class="btn btn-primary" style="width:100%" onclick="A.redeem()">✅ עדכן יתרה</button>
+      <button class="archive-btn-co" id="archiveBtnCo" style="display:none" onclick="A.archiveCurrent()">🗄️ העבר לארכיון</button>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
+// ──────────────────────────────────────────────────────────
 const SUPA_URL = 'https://kgjdapoetwbtbqwplxka.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnamRhcG9ldHdidGJxd3BseGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTUyMzgsImV4cCI6MjA4ODg5MTIzOH0.3Gq9VoNVLA2sCfpNEPDBpXdiaE1WllFmDD1gGfjuYJU';
 
-const EMO = { 'אופנה':'👗','מסעדות':'🍽️','קניות':'🛍️','פנאי':'🎯','ספורט':'💪','יופי':'💄','אחר':'📦' };
+const EMO = {'אופנה':'👗','מסעדות':'🍽️','קניות':'🛍️','פנאי':'🎯','ספורט':'💪','יופי':'💄','אחר':'📦'};
 
-const A = {
-    db: null, user: null, vouchers: [],
-    checkId: null, tags: [], vtype: 'voucher', ctype: 'static',
-    filter: 'הכל', tab: 'home', wl: null,
-
-    init() {
-        if (!window.supabase) { alert('שגיאה בטעינת Supabase'); return; }
-        this.db = window.supabase.createClient(SUPA_URL, SUPA_KEY);
-        this.db.auth.getSession().then(({ data }) => {
-            if (data?.session) { this.user = data.session.user; this.showApp(); this.load(); }
-        });
-        this.db.auth.onAuthStateChange((e, s) => {
-            if (s) { this.user = s.user; this.showApp(); this.load(); }
-            else this.user = null;
-        });
-    },
-
-    async login() {
-        const email = document.getElementById('loginEmail').value.trim();
-        const pass = document.getElementById('loginPassword').value;
-        const err = document.getElementById('loginErr');
-        err.textContent = '';
-        if (!email || !pass) { err.textContent = 'יש למלא אימייל וסיסמה'; return; }
-        const { error } = await this.db.auth.signInWithPassword({ email, password: pass });
-        if (error) err.textContent = this._e(error.message);
-    },
-
-    async register() {
-        const email = document.getElementById('regEmail').value.trim();
-        const pass = document.getElementById('regPass').value;
-        const pass2 = document.getElementById('regPass2').value;
-        const err = document.getElementById('regErr');
-        err.textContent = '';
-        if (!email || !pass) { err.textContent = 'מלא את כל השדות'; return; }
-        if (pass !== pass2) { err.textContent = 'הסיסמאות אינן תואמות'; return; }
-        if (pass.length < 6) { err.textContent = 'סיסמה חייבת להיות לפחות 6 תווים'; return; }
-        const { error } = await this.db.auth.signUp({ email, password: pass });
-        if (error) { err.textContent = this._e(error.message); return; }
-        this.toast('✅ נרשמת! בדוק את המייל לאישור.');
-        this.switchForm('login');
-    },
-
-    async logout() { await this.db.auth.signOut(); location.reload(); },
-
-    _e(m) {
-        if (m.includes('Invalid login')) return 'אימייל או סיסמה שגויים';
-        if (m.includes('already registered')) return 'כתובת זו כבר רשומה';
-        return m;
-    },
-
-    switchForm(f) {
-        document.getElementById('loginForm').style.display = f === 'login' ? 'flex' : 'none';
-        document.getElementById('registerForm').style.display = f === 'reg' ? 'flex' : 'none';
-        document.getElementById('loginErr').textContent = '';
-        document.getElementById('regErr').textContent = '';
-    },
-
-    showApp() {
-        document.getElementById('authScreen').style.display = 'none';
-        const el = document.getElementById('appScreen');
-        el.style.display = 'flex';
-        el.classList.add('on');
-        el.style.position = 'fixed';
-        el.style.inset = '0';
-        el.style.flexDirection = 'column';
-    },
-
-    async load() {
-        if (!this.user) return;
-        const { data, error } = await this.db
-            .from('vouchers').select('*').eq('user_id', this.user.id)
-            .order('expiry_date', { ascending: true });
-        if (error) { console.error(error); return; }
-        this.vouchers = data || [];
-        this.render();
-        // Real-time subscription
-        this.db.channel('v-' + this.user.id)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'vouchers', filter: `user_id=eq.${this.user.id}` }, () => this.load())
-            .subscribe();
-    },
-
-    async addVoucher() {
-        const brand = document.getElementById('brandInput').value.trim();
-        const amt = parseFloat(document.getElementById('amountInput').value);
-        const date = document.getElementById('dateInput').value;
-        const cat = document.getElementById('categoryInput').value || 'אחר';
-        const code = document.getElementById('codeInput').value.trim();
-        const dynUrl = document.getElementById('dynamicUrl').value.trim();
-        const notes = document.getElementById('notesInput').value.trim();
-        const cvv = document.getElementById('cvvInput').value.trim();
-        if (!brand) { this.toast('יש להזין שם חנות', true); return; }
-        if (!amt || amt <= 0) { this.toast('יש להזין סכום תקין', true); return; }
-        if (!date) { this.toast('יש לבחור תאריך תפוגה', true); return; }
-        const row = {
-            user_id: this.user.id, brand_name: brand, category: cat,
-            type: this.vtype, original_value: amt, current_balance: amt,
-            expiry_date: date, code: code || null,
-            dynamic_url: dynUrl || null, notes: notes || null,
-            tags: this.tags, cvv: cvv || null
-        };
-        const { error } = await this.db.from('vouchers').insert([row]);
-        if (error) { this.toast('שגיאה: ' + error.message, true); return; }
-        this.toast('✅ השובר נוסף!');
-        this.closeAdd();
-        this.load();
-    },
-
-    async deleteVoucher(id, ev) {
-        ev.stopPropagation();
-        if (!confirm('למחוק שובר זה?')) return;
-        const { error } = await this.db.from('vouchers').delete().eq('id', id);
-        if (error) { this.toast('שגיאה במחיקה', true); return; }
-        this.toast('🗑️ נמחק');
-        this.load();
-    },
-
-    async redeem() {
-        const amt = parseFloat(document.getElementById('redeemInput').value);
-        if (!amt || amt <= 0) { this.toast('הזן סכום תקין', true); return; }
-        const v = this.vouchers.find(x => x.id === this.checkId);
-        if (!v) return;
-        const newBal = Math.max(0, v.current_balance - amt);
-        const { error } = await this.db.from('vouchers').update({ current_balance: newBal }).eq('id', this.checkId);
-        if (error) { this.toast('שגיאה', true); return; }
-        document.getElementById('coBal').textContent = '₪' + newBal;
-        document.getElementById('redeemInput').value = '';
-        this.toast('✅ יתרה עודכנה: ₪' + newBal);
-        this.load();
-        if (newBal === 0) setTimeout(() => this.closeCheckout(), 1600);
-    },
-
-    openAdd() { document.getElementById('addModal').classList.add('open'); },
-    closeAdd() {
-        document.getElementById('addModal').classList.remove('open');
-        ['brandInput','amountInput','dateInput','codeInput','dynamicUrl','notesInput','tagIn','cvvInput']
-            .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-        document.getElementById('categoryInput').value = '';
-        this.tags = [];
-        this._renderTags();
-        this.setType('voucher');
-        this.setCodeType('static');
-        ['secCode','secExtras'].forEach(id => {
-            document.querySelector(`#${id} .disc-btn`).classList.remove('open');
-            document.querySelector(`#${id} .disc-body`).classList.remove('open');
-        });
-    },
-
-    setType(t) {
-        this.vtype = t;
-        document.getElementById('typeV').classList.toggle('active', t === 'voucher');
-        document.getElementById('typeC').classList.toggle('active', t === 'coupon');
-        document.getElementById('amtLabel').textContent = t === 'voucher' ? 'יתרה (₪) *' : 'ערך הנחה *';
-    },
-
-    setCodeType(t) {
-        this.ctype = t;
-        document.getElementById('ctStatic').classList.toggle('active', t === 'static');
-        document.getElementById('ctDynamic').classList.toggle('active', t === 'dynamic');
-        document.getElementById('staticField').style.display = t === 'static' ? 'block' : 'none';
-        document.getElementById('dynamicField').style.display = t === 'dynamic' ? 'block' : 'none';
-    },
-
-    toggleDisc(id) {
-        const btn = document.querySelector(`#${id} .disc-btn`);
-        const body = document.querySelector(`#${id} .disc-body`);
-        btn.classList.toggle('open');
-        body.classList.toggle('open');
-    },
-
-    handleTag(e) {
-        if ((e.key === 'Enter' || e.key === ',') && e.target.value.trim()) {
-            e.preventDefault();
-            const t = e.target.value.trim().replace(',','');
-            if (t && !this.tags.includes(t)) { this.tags.push(t); this._renderTags(); }
-            e.target.value = '';
-        }
-    },
-    removeTag(t) { this.tags = this.tags.filter(x => x !== t); this._renderTags(); },
-    _renderTags() {
-        const wrap = document.getElementById('tagsWrap');
-        const inp = document.getElementById('tagIn');
-        wrap.innerHTML = '';
-        this.tags.forEach(t => {
-            const p = document.createElement('span');
-            p.className = 'tag-pill';
-            p.innerHTML = `${t} <button onclick="A.removeTag('${t}')">×</button>`;
-            wrap.appendChild(p);
-        });
-        wrap.appendChild(inp);
-    },
-
-    setFilter(f) {
-        this.filter = f;
-        document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.dataset.f === f));
-        this.render();
-    },
-
-    openCheckout(id) {
-        const v = this.vouchers.find(x => x.id === id);
-        if (!v) return;
-        this.checkId = id;
-        const emoji = EMO[v.category] || '🏪';
-        document.getElementById('coEmoji').textContent = emoji;
-        document.getElementById('coName').textContent = v.brand_name;
-        document.getElementById('coCat').textContent = v.category || '';
-        document.getElementById('coBal').textContent = '₪' + (v.current_balance || 0);
-        document.getElementById('coSub').textContent = 'מתוך ₪' + v.original_value + ' המקוריים';
-        document.getElementById('redeemInput').value = '';
-
-        const hasDyn = !!v.dynamic_url;
-        const hasSta = !!v.code;
-        document.getElementById('staticZone').style.display = hasSta ? 'block' : 'none';
-        document.getElementById('dynamicZone').style.display = hasDyn ? 'block' : 'none';
-
-        // CVV
-        const hasCvv = !!v.cvv;
-        document.getElementById('cvvZone').style.display = hasCvv ? 'block' : 'none';
-        if (hasCvv) document.getElementById('coCvv').textContent = v.cvv;
-
-        if (hasSta) this._genBarcode(v.code);
-
-        document.getElementById('checkoutScreen').classList.add('on');
-        this._wakeLock(true);
-    },
-
-    _genBarcode(code) {
-        const canvas = document.getElementById('barcodeCanvas');
-        const qrZone = document.getElementById('qrZone');
-        document.getElementById('coCode').textContent = code;
-        qrZone.innerHTML = '';
-        canvas.style.display = 'block';
-
-        // Decide: numeric-heavy = barcode, else QR
-        const isNumeric = /^[0-9]{6,}$/.test(code);
-        try {
-            if (window.JsBarcode && isNumeric) {
-                JsBarcode(canvas, code, {
-                    format: 'CODE128', width: 2, height: 65,
-                    displayValue: false, background: '#ffffff', lineColor: '#000000', margin: 6
-                });
-            } else if (window.QRCode) {
-                canvas.style.display = 'none';
-                new QRCode(qrZone, { text: code, width: 190, height: 190, colorLight: '#ffffff', colorDark: '#000000' });
-            }
-        } catch(e) { console.warn('barcode err', e); }
-    },
-
-    closeCheckout() {
-        document.getElementById('checkoutScreen').classList.remove('on');
-        this.checkId = null;
-        this._wakeLock(false);
-        document.getElementById('qrZone').innerHTML = '';
-        document.getElementById('barcodeCanvas').style.display = 'block';
-    },
-
-    openDynamic() {
-        const v = this.vouchers.find(x => x.id === this.checkId);
-        if (v && v.dynamic_url) window.open(v.dynamic_url, '_blank');
-    },
-
-    async _wakeLock(on) {
-        try {
-            if (on && 'wakeLock' in navigator) this.wl = await navigator.wakeLock.request('screen');
-            else if (!on && this.wl) { await this.wl.release(); this.wl = null; }
-        } catch(e) {}
-    },
-
-    showTab(t) {
-        this.tab = t;
-        const ht = document.getElementById('homeTab');
-        const st = document.getElementById('statsScreen');
-        ht.style.display = t === 'home' ? 'flex' : 'none';
-        if (t === 'home') { ht.style.flexDirection = 'column'; ht.style.height = '100%'; }
-        st.classList.toggle('on', t === 'stats');
-        document.getElementById('navHome').classList.toggle('active', t === 'home');
-        document.getElementById('navStats').classList.toggle('active', t === 'stats');
-        if (t === 'stats') this.renderStats();
-    },
-
-    toast(msg, isErr = false) {
-        const el = document.getElementById('toast');
-        el.textContent = msg;
-        el.className = 'toast show' + (isErr ? ' err' : '');
-        clearTimeout(this._tid);
-        this._tid = setTimeout(() => el.className = 'toast', 2800);
-    },
-
-    _days(d) { return Math.ceil((new Date(d) - new Date()) / 86400000); },
-    _expTxt(d) {
-        if (d < 0) return 'פג תוקף';
-        if (d === 0) return 'היום!';
-        if (d === 1) return 'מחר';
-        if (d <= 7) return `${d} ימים`;
-        const dt = new Date(Date.now() + d * 86400000);
-        return dt.toLocaleDateString('he-IL', { day:'2-digit', month:'2-digit', year:'2-digit' });
-    },
-    _expCls(d) { return d < 0 ? 'expired' : d <= 7 ? 'soon' : ''; },
-    _cardCls(d) { return d < 0 ? 'expired' : d <= 7 ? 'warn' : ''; },
-
-    render() {
-        const q = (document.getElementById('searchInput')?.value || '').toLowerCase();
-        const f = this.filter;
-
-        let items = [...this.vouchers];
-        if (q) items = items.filter(v =>
-            v.brand_name.toLowerCase().includes(q) ||
-            (v.category || '').includes(q) ||
-            (v.tags || []).some(t => t.toLowerCase().includes(q))
-        );
-        if (f === 'פג תוקף קרוב') items = items.filter(v => { const d = this._days(v.expiry_date); return d >= 0 && d <= 14; });
-        else if (f !== 'הכל') items = items.filter(v => v.category === f);
-
-        const total = this.vouchers
-            .filter(v => this._days(v.expiry_date) >= 0)
-            .reduce((s, v) => s + (v.current_balance || 0), 0);
-        document.getElementById('totalBalance').textContent = total.toLocaleString('he-IL');
-
-        const list = document.getElementById('vouchersList');
-        if (!list) return;
-
-        if (items.length === 0) {
-            list.innerHTML = `<div class="empty-state"><div class="icon">📭</div><h3>${q || f !== 'הכל' ? 'לא נמצאו תוצאות' : 'הארנק ריק'}</h3><p>${q || f !== 'הכל' ? 'נסה חיפוש אחר' : 'לחץ על + להוספת שובר'}</p></div>`;
-            return;
-        }
-
-        list.innerHTML = items.map(v => {
-            const d = this._days(v.expiry_date);
-            const ec = this._expCls(d);
-            const cc = this._cardCls(d);
-            const emo = EMO[v.category] || '🏪';
-            const tagsHtml = (v.tags || []).length ? v.tags.map(t => `<span class="v-tag">${t}</span>`).join('') : '';
-            const dynDot = v.dynamic_url ? '<span class="dyn-dot" title="דינמי"></span>' : '';
-            return `<div class="voucher-card ${cc}" onclick="A.openCheckout('${v.id}')">
-                <button class="v-del" onclick="A.deleteVoucher('${v.id}',event)">🗑</button>
-                <div class="v-emoji">${emo}</div>
-                <div class="v-body">
-                    <div class="v-name">${v.brand_name}</div>
-                    <div class="v-cat">${dynDot}${v.category || ''}</div>
-                    ${tagsHtml ? `<div class="v-tags">${tagsHtml}</div>` : ''}
-                </div>
-                <div class="v-right">
-                    <div class="v-bal">₪${(v.current_balance || 0).toLocaleString()}</div>
-                    <div class="expiry-badge ${ec}">${this._expTxt(v.expiry_date)}</div>
-                </div>
-            </div>`;
-        }).join('');
-    },
-
-    renderStats() {
-        const active = this.vouchers.filter(v => this._days(v.expiry_date) >= 0);
-        const expired = this.vouchers.filter(v => this._days(v.expiry_date) < 0);
-        const total = active.reduce((s, v) => s + (v.current_balance || 0), 0);
-        const soon = active.filter(v => this._days(v.expiry_date) <= 14).length;
-        const cats = {};
-        active.forEach(v => { cats[v.category || 'אחר'] = (cats[v.category || 'אחר'] || 0) + (v.current_balance || 0); });
-        const maxV = Math.max(...Object.values(cats), 1);
-        const catHtml = Object.entries(cats).sort((a,b) => b[1]-a[1])
-            .map(([cat, val]) => `<div class="cat-row"><span>${EMO[cat]||'📦'} ${cat}</span><span style="color:var(--accent);font-weight:700">₪${val.toLocaleString()}</span></div><div class="cat-bar"><div class="cat-fill" style="width:${(val/maxV*100).toFixed(0)}%"></div></div>`).join('');
-        document.getElementById('statsContent').innerHTML = `
-        <div class="stats-grid">
-            <div class="stat-card"><div class="stat-val">₪${total.toLocaleString()}</div><div class="stat-lbl">סך יתרה פנויה</div></div>
-            <div class="stat-card"><div class="stat-val">${active.length}</div><div class="stat-lbl">שוברים פעילים</div></div>
-            <div class="stat-card"><div class="stat-val" style="color:var(--warn)">${soon}</div><div class="stat-lbl">פגים תוך 14 יום</div></div>
-            <div class="stat-card"><div class="stat-val" style="color:var(--danger)">${expired.length}</div><div class="stat-lbl">פגי תוקף</div></div>
-            <div class="stat-card wide"><div style="font-weight:900;margin-bottom:14px;font-size:15px">לפי קטגוריה</div>${catHtml || '<div style="color:var(--muted);font-size:13px">אין נתונים</div>'}</div>
-        </div>`;
-    }
+// ── SUPER-BRAND CATALOG ──────────────────────────────────
+// מפת שוברי-על → רשימת חנויות המכבדות
+const SUPER_CATALOG = {
+  'BuyMe':      ['פוקס','קסטרו','זארה','H&M','מנגו','גולף','HOmE','ויקטוריה סיקרט','שילב','ורד הגליל','בגד עור','כיף','אנגלו סכסון','Yellow','ניו פארם','FOX HOME','נקסט','טמבור','ספרינטס'],
+  'תו הזהב':   ['פוקס','קסטרו','H&M','זארה','גולף','נייקי','אדידס','פומה','ריבוק','New Balance','שילב','כיף','ורד הגליל','HOmE','FOX HOME','טמבור','אנגלו סכסון'],
+  'נופשונית':  ['ישרוטל','דן','פסטורל','לאונרדו','אסטרל','קראון פלזה','הרדוף','קיסר','מלון ישרוטל','מלון לאונרדו'],
+  'תו פלוס':   ['שופרסל','רמי לוי','יינות ביתן','מגה','אושר עד','זול ובגדול','סופר-פארם'],
+  'Fun Online': ['KSP','iDigital','Bug','מיקרוסופט','אמאזון','סטימצקי','המשביר'],
+  'גיפט קארד ישראל': ['פוקס','קסטרו','זארה','רנואר','ענבל אור','מתוק','סוגת','אלית'],
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-    A.init();
-    document.getElementById('addModal').addEventListener('click', e => {
-        if (e.target === document.getElementById('addModal')) A.closeAdd();
+const ALL_SUPER_NAMES = Object.keys(SUPER_CATALOG);
+
+const DEFAULT_BRANDS = [
+  'פוקס','קסטרו','זארה','H&M','BuyMe','תו הזהב','נופשונית','רמי לוי','שופרסל',
+  'אקסטרה','מקדונלד\'s','קפה קפה','גולף','HOmE','ויקטוריה סיקרט','אדידס','נייקי',
+  'מנגו','ספרינטס','סטימצקי','Fun Online','תו פלוס','גיפט קארד ישראל','KSP','Bug',
+];
+
+const A = {
+  db:null, user:null, vouchers:[], archived:[],
+  wallets:[], activeWalletId:null, members:[], pendingInvites:[],
+  checkId:null, tags:[], vtype:'voucher', ctype:'static',
+  filter:'הכל', tab:'home', wl:null,
+  editId:null, selectedCats:[], selectedAccepted:[],
+
+  // ── INIT ─────────────────────────────────
+  init() {
+    if (!window.supabase) { alert('שגיאה בטעינת Supabase'); return; }
+    this.db = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+    this._refreshBrandlist();
+    this.db.auth.getSession().then(({data}) => {
+      if (data?.session) { this.user = data.session.user; this.showApp(); this.loadAll(); }
     });
+    this.db.auth.onAuthStateChange((e,s) => {
+      if (s) { this.user = s.user; this.showApp(); this.loadAll(); }
+      else this.user = null;
+    });
+  },
+
+  // ── AUTH ─────────────────────────────────
+  async login() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const pass  = document.getElementById('loginPassword').value;
+    const err   = document.getElementById('loginErr');
+    err.textContent = '';
+    if (!email||!pass) { err.textContent = 'יש למלא אימייל וסיסמה'; return; }
+    const {error} = await this.db.auth.signInWithPassword({email, password:pass});
+    if (error) err.textContent = this._authErr(error.message);
+  },
+  async register() {
+    const email = document.getElementById('regEmail').value.trim();
+    const pass  = document.getElementById('regPass').value;
+    const pass2 = document.getElementById('regPass2').value;
+    const err   = document.getElementById('regErr');
+    err.textContent = '';
+    if (!email||!pass) { err.textContent = 'מלא את כל השדות'; return; }
+    if (pass!==pass2) { err.textContent = 'הסיסמאות אינן תואמות'; return; }
+    if (pass.length<6) { err.textContent = 'סיסמה לפחות 6 תווים'; return; }
+    const {error} = await this.db.auth.signUp({email, password:pass});
+    if (error) { err.textContent = this._authErr(error.message); return; }
+    this.toast('✅ נרשמת! בדוק מייל לאישור.'); this.switchForm('login');
+  },
+  async logout() { await this.db.auth.signOut(); location.reload(); },
+  _authErr(m) {
+    if (m.includes('Invalid login')) return 'אימייל או סיסמה שגויים';
+    if (m.includes('already registered')) return 'כתובת זו כבר רשומה';
+    return m;
+  },
+  switchForm(f) {
+    document.getElementById('loginForm').style.display = f==='login'?'flex':'none';
+    document.getElementById('registerForm').style.display = f==='reg'?'flex':'none';
+    document.getElementById('loginErr').textContent='';
+    document.getElementById('regErr').textContent='';
+  },
+  showApp() {
+    document.getElementById('authScreen').style.display='none';
+    const el = document.getElementById('appScreen');
+    el.classList.add('on');
+    el.style.cssText='display:flex;position:fixed;inset:0;flex-direction:column';
+  },
+
+  // ── LOAD ALL DATA ────────────────────────
+  async loadAll() {
+    await Promise.all([this.loadWallets(), this.loadVouchers()]);
+    this._setupRealtime();
+  },
+
+  // ── WALLETS ──────────────────────────────
+  async loadWallets() {
+    if (!this.user) return;
+    // 1. ensure user has a personal wallet
+    try {
+      const {data:owned} = await this.db.from('wallets')
+        .select('*').eq('owner_id', this.user.id);
+      const {data:membered} = await this.db.from('wallet_members')
+        .select('wallet_id, wallets(*), status')
+        .eq('user_id', this.user.id).eq('status','active');
+
+      let allWallets = [...(owned||[])];
+      (membered||[]).forEach(m => { if (m.wallets) allWallets.push({...m.wallets, _via_member:true}); });
+
+      if (allWallets.length===0) {
+        // create default wallet
+        const {data:w} = await this.db.from('wallets').insert([{owner_id:this.user.id,name:'הארנק שלי'}]).select().single();
+        if (w) allWallets = [w];
+      }
+
+      this.wallets = allWallets;
+      if (!this.activeWalletId && allWallets.length>0) this.activeWalletId = allWallets[0].id;
+
+      // load pending invites for this user
+      const {data:invites} = await this.db.from('wallet_members')
+        .select('*, wallets(name, owner_id)')
+        .eq('user_id', this.user.id).eq('status','pending');
+      this.pendingInvites = invites || [];
+
+      const notif = document.getElementById('inviteNotif');
+      if (notif) notif.classList.toggle('show', this.pendingInvites.length>0);
+
+      // load members of active wallet
+      await this.loadMembers();
+      this._updateWalletBadge();
+      this._populateWalletSelector();
+    } catch(e) {
+      // tables may not exist yet – silently degrade
+      console.warn('Wallet tables not ready:', e.message);
+      this.wallets = [];
+    }
+  },
+
+  async loadMembers() {
+    if (!this.activeWalletId) { this.members=[]; return; }
+    try {
+      const {data} = await this.db.from('wallet_members')
+        .select('*').eq('wallet_id', this.activeWalletId).eq('status','active');
+      this.members = data || [];
+    } catch(e) { this.members=[]; }
+  },
+
+  _isSharedWallet() {
+    return this.members.length > 0;
+  },
+
+  _updateWalletBadge() {
+    const badge = document.getElementById('walletBadge');
+    if (!badge) return;
+    const w = this.wallets.find(x=>x.id===this.activeWalletId);
+    if (this._isSharedWallet() && w) {
+      badge.textContent = `👥 ${w.name} — ארנק משותף`;
+      badge.style.display='inline-block';
+    } else {
+      badge.style.display='none';
+    }
+  },
+
+  _populateWalletSelector() {
+    const sel = document.getElementById('walletSelector');
+    const fg  = document.getElementById('walletSelectorFg');
+    if (!sel||!fg) return;
+    if (this.wallets.length<=1) { fg.style.display='none'; return; }
+    fg.style.display='block';
+    sel.innerHTML = this.wallets.map(w=>`<option value="${w.id}">${w.name}${w._via_member?' (משותף)':''}</option>`).join('');
+    sel.value = this.activeWalletId||'';
+  },
+
+  // ── INVITE ───────────────────────────────
+  async inviteUser(email) {
+    if (!email||!this.activeWalletId) return;
+    // look up user by email in auth.users via RPC (needs a Supabase function) –
+    // fallback: store by email, resolve user_id later when they log in
+    const {error} = await this.db.from('wallet_members').insert([{
+      wallet_id: this.activeWalletId,
+      invited_email: email.trim().toLowerCase(),
+      invited_by: this.user.id,
+      status: 'pending',
+      user_id: null   // resolved on accept
+    }]);
+    if (error) { this.toast('שגיאה בשליחת הזמנה: '+error.message, true); return; }
+    this.toast('📨 הזמנה נשלחה ל-'+email);
+    this.renderSettings();
+  },
+
+  async acceptInvite(memberId) {
+    const {error} = await this.db.from('wallet_members')
+      .update({status:'active', user_id: this.user.id})
+      .eq('id', memberId);
+    if (error) { this.toast('שגיאה',true); return; }
+    this.toast('✅ הצטרפת לארנק!');
+    await this.loadAll(); this.renderSettings();
+  },
+
+  async declineInvite(memberId) {
+    await this.db.from('wallet_members').delete().eq('id', memberId);
+    this.toast('❌ ההזמנה נדחתה');
+    await this.loadWallets(); this.renderSettings();
+  },
+
+  async removeMember(memberId) {
+    if (!confirm('להסיר משתמש זה מהארנק?')) return;
+    await this.db.from('wallet_members').delete().eq('id', memberId);
+    this.toast('הוסר מהארנק'); await this.loadMembers(); this.renderSettings();
+  },
+
+  // ── VOUCHERS ─────────────────────────────
+  async loadVouchers() {
+    if (!this.user) return;
+    // Load from personal wallet (user_id) AND shared wallets
+    const walletIds = this.wallets.map(w=>w.id).filter(Boolean);
+
+    let query = this.db.from('vouchers').select('*').eq('user_id', this.user.id);
+    if (walletIds.length>1) {
+      // also grab vouchers from all accessible wallets
+      query = this.db.from('vouchers').select('*')
+        .or(`user_id.eq.${this.user.id},wallet_id.in.(${walletIds.join(',')})`);
+    }
+    const {data, error} = await query.order('expiry_date',{ascending:true});
+    if (error) { console.error(error); return; }
+    const all = data || [];
+    this.vouchers = all.filter(v=>!v.archived);
+    this.archived = all.filter(v=>v.archived);
+    this.render();
+    if (this.tab==='archive') this.renderArchive();
+    if (this.tab==='stats')   this.renderStats();
+  },
+
+  _setupRealtime() {
+    if (!this.user) return;
+    this.db.channel('rt-'+this.user.id)
+      .on('postgres_changes',{event:'*',schema:'public',table:'vouchers',filter:`user_id=eq.${this.user.id}`},
+        ()=>this.loadVouchers())
+      .subscribe();
+  },
+
+  // ── SAVE VOUCHER ─────────────────────────
+  async saveVoucher() {
+    const brand   = document.getElementById('brandInput').value.trim();
+    const amt     = parseFloat(document.getElementById('amountInput').value);
+    const date    = document.getElementById('dateInput').value;
+    const code    = document.getElementById('codeInput').value.trim();
+    const dynUrl  = document.getElementById('dynamicUrl').value.trim();
+    const notes   = document.getElementById('notesInput').value.trim();
+    const cvv     = document.getElementById('cvvInput').value.trim();
+    const walSel  = document.getElementById('walletSelector');
+    const walletId = (walSel && walSel.style.display!=='none') ? walSel.value : (this.activeWalletId||null);
+
+    if (!brand) { this.toast('יש להזין שם חנות',true); return; }
+    if (!amt||amt<=0) { this.toast('יש להזין סכום תקין',true); return; }
+    if (!date) { this.toast('יש לבחור תאריך תפוגה',true); return; }
+
+    const cats = this.selectedCats;
+    const primaryCat = cats[0]||'אחר';
+    const isSuperBrand = ALL_SUPER_NAMES.includes(brand);
+
+    if (this.editId) {
+      // EDIT
+      const existing = [...this.vouchers,...this.archived].find(v=>v.id===this.editId);
+      const {error} = await this.db.from('vouchers').update({
+        brand_name:brand, category:primaryCat, categories:cats,
+        type:this.vtype, original_value:amt,
+        current_balance: existing ? Math.min(existing.current_balance,amt) : amt,
+        expiry_date:date, code:code||null, dynamic_url:dynUrl||null,
+        notes:notes||null, tags:this.tags, cvv:cvv||null,
+        is_super_brand:isSuperBrand, accepted_brands:this.selectedAccepted,
+        wallet_id: walletId
+      }).eq('id',this.editId);
+      if (error) { this.toast('שגיאה: '+error.message,true); return; }
+      this.toast('✅ עודכן בהצלחה!'); this.closeAdd(); this.loadVouchers(); return;
+    }
+
+    // ADD — duplicate check
+    if (code) {
+      const dup = [...this.vouchers,...this.archived].find(v=>v.code&&v.code===code);
+      if (dup) { this.toast(`⚠️ קוד "${code}" כבר קיים!`,true); document.getElementById('dupWarn').classList.add('show'); return; }
+    }
+
+    const {error} = await this.db.from('vouchers').insert([{
+      user_id:this.user.id, wallet_id:walletId,
+      brand_name:brand, category:primaryCat, categories:cats,
+      type:this.vtype, original_value:amt, current_balance:amt,
+      expiry_date:date, code:code||null, dynamic_url:dynUrl||null,
+      notes:notes||null, tags:this.tags, cvv:cvv||null,
+      archived:false, is_super_brand:isSuperBrand, accepted_brands:this.selectedAccepted
+    }]);
+    if (error) { this.toast('שגיאה: '+error.message,true); return; }
+    this.toast('✅ השובר נוסף!'); this.closeAdd(); this.loadVouchers();
+  },
+
+  // ── EDIT ─────────────────────────────────
+  openEdit(id, ev) {
+    ev.stopPropagation();
+    const v = [...this.vouchers,...this.archived].find(x=>x.id===id);
+    if (!v) return;
+    this.editId = id;
+    document.getElementById('modalTitle').textContent = '✏️ עריכת שובר';
+    document.getElementById('saveBtn').textContent = 'שמור שינויים';
+    document.getElementById('brandInput').value  = v.brand_name||'';
+    document.getElementById('amountInput').value = v.original_value||'';
+    document.getElementById('dateInput').value   = v.expiry_date||'';
+    document.getElementById('codeInput').value   = v.code||'';
+    document.getElementById('dynamicUrl').value  = v.dynamic_url||'';
+    document.getElementById('notesInput').value  = v.notes||'';
+    document.getElementById('cvvInput').value    = v.cvv||'';
+    this.selectedCats     = v.categories||(v.category?[v.category]:[]);
+    this.selectedAccepted = v.accepted_brands||[];
+    this._renderCatChips();
+    this.onBrandInput(); // trigger super-brand section if needed
+    this._renderAcceptedChips(v.brand_name);
+    this.setType(v.type||'voucher');
+    this.setCodeType(v.dynamic_url?'dynamic':'static');
+    this.tags = v.tags||[];
+    this._renderTags();
+    if (v.code||v.dynamic_url||v.cvv) {
+      document.querySelector('#secCode .disc-btn').classList.add('open');
+      document.querySelector('#secCode .disc-body').classList.add('open');
+    }
+    document.getElementById('addModal').classList.add('open');
+  },
+
+  // ── DELETE / ARCHIVE ─────────────────────
+  async deleteVoucher(id,ev) {
+    ev.stopPropagation();
+    if (!confirm('למחוק לצמיתות?')) return;
+    const {error} = await this.db.from('vouchers').delete().eq('id',id);
+    if (error) { this.toast('שגיאה',true); return; }
+    this.toast('🗑️ נמחק'); this.loadVouchers();
+  },
+  async archiveVoucher(id,ev) {
+    if (ev) ev.stopPropagation();
+    const {error} = await this.db.from('vouchers').update({archived:true}).eq('id',id);
+    if (error) { this.toast('שגיאה',true); return; }
+    this.toast('🗄️ הועבר לארכיון'); this.loadVouchers();
+  },
+  async unarchive(id,ev) {
+    if (ev) ev.stopPropagation();
+    await this.db.from('vouchers').update({archived:false}).eq('id',id);
+    this.toast('↩️ הוחזר לארנק'); this.loadVouchers();
+  },
+  archiveCurrent() { if (this.checkId) { this.archiveVoucher(this.checkId,null); this.closeCheckout(); } },
+
+  // ── REDEEM ───────────────────────────────
+  async redeem() {
+    const amt = parseFloat(document.getElementById('redeemInput').value);
+    if (!amt||amt<=0) { this.toast('הזן סכום תקין',true); return; }
+    const v = this.vouchers.find(x=>x.id===this.checkId);
+    if (!v) return;
+
+    // OFFLINE GUARD for shared vouchers
+    const isShared = v.wallet_id && this._isSharedWallet();
+    if (isShared && !navigator.onLine) {
+      this.toast('⚡ אין אינטרנט — לא ניתן לעדכן שובר משותף',true);
+      document.getElementById('offlineWarn').classList.add('show');
+      return;
+    }
+
+    const newBal = Math.max(0, v.current_balance - amt);
+    const {error} = await this.db.from('vouchers').update({current_balance:newBal}).eq('id',this.checkId);
+    if (error) { this.toast('שגיאה',true); return; }
+    document.getElementById('coBal').textContent='₪'+newBal;
+    document.getElementById('redeemInput').value='';
+    this.toast('✅ יתרה עודכנה: ₪'+newBal);
+    if (newBal===0) { document.getElementById('archiveBtnCo').style.display='block'; }
+    this.loadVouchers();
+  },
+
+  // ── OPEN/CLOSE ADD MODAL ─────────────────
+  openAdd() {
+    this.editId=null;
+    document.getElementById('modalTitle').textContent='➕ הוסף שובר';
+    document.getElementById('saveBtn').textContent='הוסף שובר';
+    document.getElementById('dupWarn').classList.remove('show');
+    const d=new Date(); d.setFullYear(d.getFullYear()+5);
+    document.getElementById('dateInput').value=d.toISOString().split('T')[0];
+    document.getElementById('addModal').classList.add('open');
+  },
+  closeAdd() {
+    document.getElementById('addModal').classList.remove('open');
+    ['brandInput','amountInput','codeInput','dynamicUrl','notesInput','tagIn','cvvInput']
+      .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+    document.getElementById('dateInput').value='';
+    document.getElementById('dupWarn').classList.remove('show');
+    document.getElementById('superBrandSection').style.display='none';
+    this.tags=[]; this._renderTags();
+    this.selectedCats=[]; this._renderCatChips();
+    this.selectedAccepted=[];
+    this.setType('voucher'); this.setCodeType('static');
+    this.editId=null;
+    ['secCode','secExtras'].forEach(id=>{
+      document.querySelector('#'+id+' .disc-btn').classList.remove('open');
+      document.querySelector('#'+id+' .disc-body').classList.remove('open');
+    });
+  },
+
+  // ── CHECKOUT ─────────────────────────────
+  openCheckout(id) {
+    const v = [...this.vouchers,...this.archived].find(x=>x.id===id);
+    if (!v) return;
+    this.checkId=id;
+    const allCats = v.categories&&v.categories.length ? v.categories : [v.category||''];
+    document.getElementById('coEmoji').textContent = EMO[allCats[0]]||'🏪';
+    document.getElementById('coName').textContent  = v.brand_name;
+    document.getElementById('coCat').textContent   = allCats.join(' · ');
+    document.getElementById('coBal').textContent   = '₪'+(v.current_balance||0);
+    document.getElementById('coSub').textContent   = 'מתוך ₪'+v.original_value+' המקוריים';
+    document.getElementById('redeemInput').value   = '';
+    document.getElementById('archiveBtnCo').style.display = (v.current_balance===0)?'block':'none';
+    document.getElementById('offlineWarn').classList.remove('show');
+
+    // super-brand accepted stores
+    const accEl = document.getElementById('coAccepted');
+    if (v.accepted_brands&&v.accepted_brands.length) {
+      accEl.textContent = '⭐ תקף ב: '+v.accepted_brands.join(' · ');
+      accEl.style.display='block';
+    } else { accEl.style.display='none'; }
+
+    // offline warning pre-check
+    const isShared = v.wallet_id&&this._isSharedWallet();
+    if (isShared&&!navigator.onLine) document.getElementById('offlineWarn').classList.add('show');
+
+    const hasSta=!!v.code, hasDyn=!!v.dynamic_url, hasCvv=!!v.cvv;
+    document.getElementById('staticZone').style.display  = hasSta?'block':'none';
+    document.getElementById('dynamicZone').style.display = hasDyn?'block':'none';
+    document.getElementById('cvvZone').style.display     = hasCvv?'block':'none';
+    if (hasCvv) document.getElementById('coCvv').textContent=v.cvv;
+    if (hasSta) this._genBarcode(v.code);
+    document.getElementById('checkoutScreen').classList.add('on');
+    this._wakeLock(true);
+  },
+  closeCheckout() {
+    document.getElementById('checkoutScreen').classList.remove('on');
+    this.checkId=null; this._wakeLock(false);
+    document.getElementById('qrZone').innerHTML='';
+    document.getElementById('barcodeCanvas').style.display='block';
+  },
+  openDynamic() {
+    const v=[...this.vouchers,...this.archived].find(x=>x.id===this.checkId);
+    if (v&&v.dynamic_url) window.open(v.dynamic_url,'_blank');
+  },
+
+  // ── SUPER-BRAND UI ───────────────────────
+  onBrandInput() {
+    const brand = document.getElementById('brandInput').value.trim();
+    this._renderAcceptedChips(brand);
+  },
+  _renderAcceptedChips(brand) {
+    const sec = document.getElementById('superBrandSection');
+    const container = document.getElementById('acceptedBrandsChips');
+    if (!brand||!SUPER_CATALOG[brand]) { sec.style.display='none'; return; }
+    sec.style.display='block';
+    const stores = SUPER_CATALOG[brand];
+    container.innerHTML = stores.map(s =>
+      `<div class="mchip sel-warn ${this.selectedAccepted.includes(s)?'sel':''}" 
+            data-store="${s}" onclick="A.toggleAccepted('${s}')">${s}</div>`
+    ).join('');
+  },
+  toggleAccepted(store) {
+    const i = this.selectedAccepted.indexOf(store);
+    if (i===-1) this.selectedAccepted.push(store);
+    else this.selectedAccepted.splice(i,1);
+    document.querySelectorAll('#acceptedBrandsChips .mchip').forEach(el=>{
+      el.classList.toggle('sel', this.selectedAccepted.includes(el.dataset.store));
+    });
+  },
+
+  // ── BRANDS ───────────────────────────────
+  _getBrands() {
+    const custom = JSON.parse(localStorage.getItem('customBrands')||'[]');
+    return [...new Set([...DEFAULT_BRANDS,...custom])].sort();
+  },
+  _refreshBrandlist() {
+    const dl = document.getElementById('blist');
+    if (!dl) return;
+    dl.innerHTML = this._getBrands().map(b=>`<option value="${b}">`).join('');
+  },
+  openBrandModal() { document.getElementById('brandModal').classList.add('open'); document.getElementById('newBrandInput').value=''; },
+  closeBrandModal() { document.getElementById('brandModal').classList.remove('open'); },
+  saveBrand() {
+    const name = document.getElementById('newBrandInput').value.trim();
+    if (!name) return;
+    const custom = JSON.parse(localStorage.getItem('customBrands')||'[]');
+    if (!custom.includes(name)) { custom.push(name); localStorage.setItem('customBrands',JSON.stringify(custom)); }
+    this._refreshBrandlist();
+    document.getElementById('brandInput').value=name;
+    this.closeBrandModal();
+    this.toast('✅ החנות נוספה');
+    this.onBrandInput();
+  },
+
+  // ── CATEGORIES ───────────────────────────
+  toggleCat(cat) {
+    const i=this.selectedCats.indexOf(cat);
+    if (i===-1) this.selectedCats.push(cat);
+    else this.selectedCats.splice(i,1);
+    this._renderCatChips();
+  },
+  _renderCatChips() {
+    document.querySelectorAll('#catChips .mchip').forEach(el=>{
+      el.classList.toggle('sel', this.selectedCats.includes(el.dataset.cat));
+    });
+  },
+
+  // ── DUPLICATE CHECK ──────────────────────
+  checkDup() {
+    const code = document.getElementById('codeInput').value.trim();
+    const dup = code&&!this.editId&&[...this.vouchers,...this.archived].find(v=>v.code&&v.code===code);
+    document.getElementById('dupWarn').classList.toggle('show',!!dup);
+  },
+
+  // ── FORM HELPERS ─────────────────────────
+  setType(t) {
+    this.vtype=t;
+    document.getElementById('typeV').classList.toggle('active',t==='voucher');
+    document.getElementById('typeC').classList.toggle('active',t==='coupon');
+    document.getElementById('amtLabel').textContent=t==='voucher'?'יתרה (₪) *':'ערך הנחה *';
+  },
+  setCodeType(t) {
+    this.ctype=t;
+    document.getElementById('ctStatic').classList.toggle('active',t==='static');
+    document.getElementById('ctDynamic').classList.toggle('active',t==='dynamic');
+    document.getElementById('staticField').style.display  = t==='static'?'block':'none';
+    document.getElementById('dynamicField').style.display = t==='dynamic'?'block':'none';
+  },
+  toggleDisc(id) {
+    document.querySelector('#'+id+' .disc-btn').classList.toggle('open');
+    document.querySelector('#'+id+' .disc-body').classList.toggle('open');
+  },
+  handleTag(e) {
+    if ((e.key==='Enter'||e.key===',')&&e.target.value.trim()) {
+      e.preventDefault();
+      const t=e.target.value.trim().replace(',','');
+      if (t&&!this.tags.includes(t)) { this.tags.push(t); this._renderTags(); }
+      e.target.value='';
+    }
+  },
+  removeTag(t) { this.tags=this.tags.filter(x=>x!==t); this._renderTags(); },
+  _renderTags() {
+    const wrap=document.getElementById('tagsWrap');
+    const inp=document.getElementById('tagIn');
+    wrap.innerHTML='';
+    this.tags.forEach(t=>{
+      const p=document.createElement('span'); p.className='tag-pill';
+      p.innerHTML=`${t} <button onclick="A.removeTag('${t}')">×</button>`;
+      wrap.appendChild(p);
+    });
+    wrap.appendChild(inp);
+  },
+
+  // ── FILTER / TAB ─────────────────────────
+  setFilter(f) {
+    this.filter=f;
+    document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active',c.dataset.f===f));
+    this.render();
+  },
+  showTab(t) {
+    this.tab=t;
+    const tabs=['homeTab','archiveTab','statsScreen','settingsScreen'];
+    tabs.forEach(id=>{
+      const el=document.getElementById(id);
+      if (!el) return;
+      if (id==='homeTab'||id==='archiveTab') {
+        el.classList.toggle('hidden', !(id===t+'Tab'));
+      } else {
+        el.classList.toggle('on', id===t+'Screen');
+      }
+    });
+    ['navHome','navArchive','navStats','navSettings'].forEach(id=>{
+      const el=document.getElementById(id);
+      if (el) el.classList.toggle('active', id==='nav'+t.charAt(0).toUpperCase()+t.slice(1));
+    });
+    document.getElementById('mainFab').style.display=t==='home'?'flex':'none';
+    if (t==='home')     { const h=document.getElementById('homeTab'); h.classList.remove('hidden'); }
+    if (t==='archive')  this.renderArchive();
+    if (t==='stats')    this.renderStats();
+    if (t==='settings') this.renderSettings();
+  },
+
+  // ── TOAST ────────────────────────────────
+  toast(msg,isErr=false) {
+    const el=document.getElementById('toast');
+    el.textContent=msg; el.className='toast show'+(isErr?' err':'');
+    clearTimeout(this._tid);
+    this._tid=setTimeout(()=>el.className='toast',2800);
+  },
+
+  // ── RENDER HELPERS ───────────────────────
+  _days(d) { return Math.ceil((new Date(d)-new Date())/86400000); },
+  _expTxt(d) {
+    if (d<0) return 'פג תוקף';
+    if (d===0) return 'היום!';
+    if (d===1) return 'מחר';
+    if (d<=7)  return `${d} ימים`;
+    const dt=new Date(Date.now()+d*86400000);
+    return dt.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'2-digit'});
+  },
+  _expCls(d)  { return d<0?'expired':d<=7?'soon':''; },
+  _cardCls(v) {
+    if (v.archived) return 'archived-card';
+    if (v.current_balance===0) return 'zeroed';
+    const d=this._days(v.expiry_date);
+    return d<0?'expired':d<=7?'warn':'';
+  },
+  _getCatDisplay(v) {
+    if (v.categories&&v.categories.length) return v.categories.join(' · ');
+    return v.category||'';
+  },
+  _getEmoji(v) {
+    const cats=v.categories&&v.categories.length?v.categories:[v.category];
+    return EMO[cats[0]]||'🏪';
+  },
+  _isVoucherShared(v) {
+    return !!(v.wallet_id && this.members.length>0);
+  },
+
+  async _wakeLock(on) {
+    try {
+      if (on&&'wakeLock' in navigator) this.wl=await navigator.wakeLock.request('screen');
+      else if (!on&&this.wl) { await this.wl.release(); this.wl=null; }
+    } catch(e) {}
+  },
+
+  _genBarcode(code) {
+    const canvas=document.getElementById('barcodeCanvas');
+    const qrZone=document.getElementById('qrZone');
+    document.getElementById('coCode').textContent=code;
+    qrZone.innerHTML=''; canvas.style.display='block';
+    try {
+      if (window.JsBarcode&&/^[0-9]{6,}$/.test(code)) {
+        JsBarcode(canvas,code,{format:'CODE128',width:2,height:65,displayValue:false,background:'#ffffff',lineColor:'#000000',margin:6});
+      } else if (window.QRCode) {
+        canvas.style.display='none';
+        new QRCode(qrZone,{text:code,width:190,height:190,colorLight:'#ffffff',colorDark:'#000000'});
+      }
+    } catch(e) { console.warn('barcode err',e); }
+  },
+
+  // ── RENDER HOME ──────────────────────────
+  render() {
+    const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
+    const f=this.filter;
+    let items=[...this.vouchers];
+
+    if (q) items=items.filter(v=>
+      v.brand_name.toLowerCase().includes(q) ||
+      (v.code||'').toLowerCase().includes(q) ||
+      (v.category||'').includes(q) ||
+      (v.categories||[]).some(c=>c.includes(q)) ||
+      (v.tags||[]).some(t=>t.toLowerCase().includes(q)) ||
+      // ✅ SUPER-BRAND SEARCH: match child stores
+      (v.accepted_brands||[]).some(s=>s.toLowerCase().includes(q))
+    );
+
+    if (f==='פג תוקף קרוב') items=items.filter(v=>{ const d=this._days(v.expiry_date); return d>=0&&d<=14; });
+    else if (f==='משותף') items=items.filter(v=>this._isVoucherShared(v));
+    else if (f!=='הכל') items=items.filter(v=>(v.categories||[v.category||'']).includes(f));
+
+    const total=this.vouchers.filter(v=>this._days(v.expiry_date)>=0&&!v.archived).reduce((s,v)=>s+(v.current_balance||0),0);
+    document.getElementById('totalBalance').textContent=total.toLocaleString('he-IL');
+
+    const list=document.getElementById('vouchersList');
+    if (!list) return;
+    if (items.length===0) {
+      list.innerHTML=`<div class="empty-state"><div class="icon">📭</div><h3>${q||f!=='הכל'?'לא נמצאו תוצאות':'הארנק ריק'}</h3><p>${q||f!=='הכל'?'נסה חיפוש אחר':'לחץ + להוספת שובר'}</p></div>`;
+      return;
+    }
+    list.innerHTML=items.map(v=>{
+      const d=this._days(v.expiry_date);
+      const ec=(v.current_balance===0)?'archive':this._expCls(d);
+      const cc=this._cardCls(v);
+      const emo=this._getEmoji(v);
+      const tagsHtml=(v.tags||[]).length?v.tags.map(t=>`<span class="v-tag">${t}</span>`).join(''):'';
+      const dynDot=v.dynamic_url?'<span class="dyn-dot"></span>':'';
+      const sharedDot=this._isVoucherShared(v)?'<span class="shared-dot" title="ארנק משותף"></span>':'';
+      const superBadge=v.is_super_brand?'<span class="super-badge">שובר-על</span>':'';
+      const sharedCardCls=this._isVoucherShared(v)?'shared-card':'';
+      const zeroBadge=(v.current_balance===0)?`<span class="expiry-badge archive">יתרה אפס</span>`:`<span class="expiry-badge ${ec}">${this._expTxt(v.expiry_date)}</span>`;
+      return `<div class="voucher-card ${cc} ${sharedCardCls}" onclick="A.openCheckout('${v.id}')">
+        <div class="card-actions">
+          <button class="card-btn del"  onclick="A.deleteVoucher('${v.id}',event)">🗑</button>
+          <button class="card-btn edit" onclick="A.openEdit('${v.id}',event)">✏️</button>
+          <button class="card-btn arch" onclick="A.archiveVoucher('${v.id}',event)">🗄</button>
+        </div>
+        <div class="v-emoji">${emo}</div>
+        <div class="v-body">
+          <div class="v-name">${superBadge}${v.brand_name}${sharedDot}</div>
+          <div class="v-cat">${dynDot}${this._getCatDisplay(v)}</div>
+          ${v.accepted_brands&&v.accepted_brands.length?`<div class="v-cat" style="color:var(--warn);font-size:11px;margin-top:2px">⭐ ${v.accepted_brands.slice(0,3).join(', ')}${v.accepted_brands.length>3?' +עוד':''}</div>`:''}
+          ${tagsHtml?`<div class="v-tags">${tagsHtml}</div>`:''}
+        </div>
+        <div class="v-right">
+          <div class="v-bal${v.current_balance===0?' zero':''}">₪${(v.current_balance||0).toLocaleString()}</div>
+          ${zeroBadge}
+        </div>
+      </div>`;
+    }).join('');
+  },
+
+  // ── RENDER ARCHIVE ───────────────────────
+  renderArchive() {
+    const list=document.getElementById('archiveList');
+    if (!list) return;
+    if (this.archived.length===0) {
+      list.innerHTML=`<div class="empty-state"><div class="icon">🗄️</div><h3>הארכיון ריק</h3><p>שוברים שנוצלו יופיעו כאן</p></div>`;
+      return;
+    }
+    list.innerHTML=this.archived.map(v=>`<div class="voucher-card archived-card" onclick="A.openCheckout('${v.id}')">
+      <div class="card-actions">
+        <button class="card-btn del" onclick="A.deleteVoucher('${v.id}',event)">🗑</button>
+        <button class="card-btn edit" onclick="A.openEdit('${v.id}',event)" style="background:rgba(167,139,250,.15);color:var(--archive)">↩️</button>
+      </div>
+      <div class="v-emoji">${this._getEmoji(v)}</div>
+      <div class="v-body"><div class="v-name">${v.brand_name}</div><div class="v-cat">${this._getCatDisplay(v)}</div></div>
+      <div class="v-right"><div class="v-bal zero">₪0</div><span class="expiry-badge archive">בארכיון</span></div>
+    </div>`).join('');
+  },
+
+  // ── RENDER STATS ─────────────────────────
+  renderStats() {
+    const active=this.vouchers.filter(v=>this._days(v.expiry_date)>=0);
+    const expired=this.vouchers.filter(v=>this._days(v.expiry_date)<0);
+    const total=active.reduce((s,v)=>s+(v.current_balance||0),0);
+    const soon=active.filter(v=>this._days(v.expiry_date)<=14).length;
+    const cats={};
+    active.forEach(v=>{
+      const cl=v.categories&&v.categories.length?v.categories:[v.category||'אחר'];
+      cl.forEach(c=>{ cats[c]=(cats[c]||0)+(v.current_balance||0); });
+    });
+    const maxV=Math.max(...Object.values(cats),1);
+    const catHtml=Object.entries(cats).sort((a,b)=>b[1]-a[1])
+      .map(([c,val])=>`<div class="cat-row"><span>${EMO[c]||'📦'} ${c}</span><span style="color:var(--accent);font-weight:700">₪${val.toLocaleString()}</span></div><div class="cat-bar"><div class="cat-fill" style="width:${(val/maxV*100).toFixed(0)}%"></div></div>`).join('');
+    document.getElementById('statsContent').innerHTML=`
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-val">₪${total.toLocaleString()}</div><div class="stat-lbl">סך יתרה פנויה</div></div>
+      <div class="stat-card"><div class="stat-val">${active.length}</div><div class="stat-lbl">שוברים פעילים</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--warn)">${soon}</div><div class="stat-lbl">פגים תוך 14 יום</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--archive)">${this.archived.length}</div><div class="stat-lbl">בארכיון</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--danger)">${expired.length}</div><div class="stat-lbl">פגי תוקף</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--shared)">${this.members.length}</div><div class="stat-lbl">שותפים לארנק</div></div>
+      <div class="stat-card wide"><div style="font-weight:900;margin-bottom:14px;font-size:15px">לפי קטגוריה</div>${catHtml||'<div style="color:var(--muted);font-size:13px">אין נתונים</div>'}</div>
+    </div>`;
+  },
+
+  // ── RENDER SETTINGS ──────────────────────
+  renderSettings() {
+    const body=document.getElementById('settingsBody');
+    if (!body) return;
+    const activeW=this.wallets.find(w=>w.id===this.activeWalletId);
+    const isOwner=activeW&&activeW.owner_id===this.user.id;
+
+    // pending invitations
+    const invHtml=this.pendingInvites.map(inv=>`
+      <div class="invite-banner">
+        <div class="inv-icon">📨</div>
+        <div class="inv-body">
+          <strong>${inv.wallets?.name||'ארנק'}</strong>
+          <p>הוזמנת לשתף ארנק</p>
+          <div class="inv-actions">
+            <button class="inv-accept" onclick="A.acceptInvite('${inv.id}')">✅ קבל</button>
+            <button class="inv-decline" onclick="A.declineInvite('${inv.id}')">❌ דחה</button>
+          </div>
+        </div>
+      </div>`).join('');
+
+    // members list
+    const membersHtml=this.members.map(m=>`
+      <div class="member-row">
+        <div class="member-avatar">👤</div>
+        <div class="member-info">
+          <div class="member-email">${m.invited_email||m.user_id||'—'}</div>
+          <div class="member-status ${m.status==='pending'?'pending':''}">${m.status==='pending'?'ממתין לאישור':'פעיל'}</div>
+        </div>
+        ${isOwner?`<button class="member-remove" onclick="A.removeMember('${m.id}')">הסר</button>`:''}
+      </div>`).join('');
+
+    // wallet switcher
+    const walletSwitchHtml=this.wallets.length>1 ? `
+      <div class="settings-section">
+        <h3>ארנקים זמינים</h3>
+        ${this.wallets.map(w=>`
+          <div class="wallet-card ${w.id===this.activeWalletId?'active-wallet':''}" style="cursor:pointer" onclick="A.switchWallet('${w.id}')">
+            <div class="wallet-name">${w.name}${w._via_member?' 👥':''}</div>
+            <div class="wallet-meta">${w.id===this.activeWalletId?'✅ פעיל כעת':''}</div>
+          </div>`).join('')}
+      </div>` : '';
+
+    body.innerHTML=`
+      ${invHtml?`<div class="settings-section"><h3>הזמנות</h3>${invHtml}</div>`:''}
+      ${walletSwitchHtml}
+      <div class="settings-section">
+        <h3>הארנק הנוכחי — ${activeW?.name||'—'}</h3>
+        <div class="wallet-card active-wallet">
+          <div class="wallet-name">${activeW?.name||'הארנק שלי'}</div>
+          <div class="wallet-meta">${isOwner?'אתה הבעלים':'אתה חבר'}</div>
+        </div>
+        ${isOwner?`
+          <h3 style="margin-top:20px">חברים בארנק</h3>
+          ${membersHtml||'<p style="font-size:13px;color:var(--muted);padding:8px 0">אין חברים עדיין</p>'}
+          <div class="invite-row">
+            <input type="email" id="inviteEmailInput" placeholder="אימייל לשליחת הזמנה..." autocomplete="email">
+            <button class="invite-btn" onclick="A.inviteUser(document.getElementById('inviteEmailInput').value)">📨 הזמן</button>
+          </div>
+        `:`<p style="font-size:13px;color:var(--muted);margin-top:12px">רק בעל הארנק יכול להזמין חברים</p>`}
+      </div>
+      <div class="settings-section">
+        <h3>שוברי-על מוכרים</h3>
+        ${Object.entries(SUPER_CATALOG).map(([name,stores])=>`
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px">
+            <div style="font-weight:700;margin-bottom:6px">⭐ ${name}</div>
+            <div style="font-size:12px;color:var(--muted);line-height:1.7">${stores.join(' · ')}</div>
+          </div>`).join('')}
+      </div>`;
+  },
+
+  async switchWallet(walletId) {
+    this.activeWalletId=walletId;
+    await this.loadMembers();
+    this._updateWalletBadge();
+    this._populateWalletSelector();
+    await this.loadVouchers();
+    this.renderSettings();
+    this.toast('✅ עברת לארנק');
+  },
+};
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  A.init();
+  document.getElementById('addModal').addEventListener('click', e=>{
+    if (e.target===document.getElementById('addModal')) A.closeAdd();
+  });
+  document.getElementById('brandModal').addEventListener('click', e=>{
+    if (e.target===document.getElementById('brandModal')) A.closeBrandModal();
+  });
+  document.getElementById('newBrandInput').addEventListener('keydown', e=>{
+    if (e.key==='Enter') A.saveBrand();
+  });
+  // offline/online detection
+  window.addEventListener('offline', ()=>A.toast('⚡ אין חיבור לאינטרנט',true));
+  window.addEventListener('online',  ()=>A.toast('✅ חיבור חזר'));
 });
 </script>
 </body>
