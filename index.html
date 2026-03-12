@@ -432,11 +432,7 @@ html,body{height:100%;width:100%;font-family:var(--font);background:var(--bg);co
         <div class="fg"><label>תאריך תפוגה</label><input type="date" id="dateInput"></div>
       </div>
 
-      <!-- WALLET SELECTOR (shown when user has shared wallets) -->
-      <div class="fg" id="walletSelectorFg" style="display:none">
-        <label>ארנק</label>
-        <select id="walletSelector"></select>
-      </div>
+      <!-- WALLET SELECTOR removed — one wallet per user -->
 
       <!-- Progressive Disclosure: Code -->
       <div class="disc-section" id="secCode">
@@ -534,6 +530,22 @@ html,body{height:100%;width:100%;font-family:var(--font);background:var(--bg);co
   </div>
 </div>
 
+<!-- SUPER-BRAND EDIT MODAL -->
+<div class="center-modal" id="sbEditModal">
+  <div class="center-box" style="max-width:420px">
+    <h3 id="sbEditTitle">✏️ עריכת שובר-על</h3>
+    <p style="margin-bottom:14px">שם השובר-על</p>
+    <input type="text" id="sbEditName" placeholder="BuyMe, תו הזהב...">
+    <p style="font-size:11px;color:var(--muted);margin-bottom:7px;text-transform:uppercase;letter-spacing:.4px;font-weight:700">רשימת חנויות — שורה לכל חנות (או פסיק)</p>
+    <textarea id="sbEditStores" style="width:100%;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:var(--font);font-size:13px;resize:vertical;min-height:130px;line-height:1.7;margin-bottom:14px" placeholder="פוקס&#10;קסטרו&#10;זארה"></textarea>
+    <div class="center-actions">
+      <button class="btn btn-secondary" style="flex:0 0 auto;padding:13px 18px" onclick="A.closeSuperBrandEdit()">ביטול</button>
+      <button id="sbDeleteBtn" class="btn" style="flex:0 0 auto;padding:13px 18px;background:rgba(255,68,68,.14);color:#ff6666;border:1px solid rgba(255,68,68,.3)" onclick="A.deleteSuperBrand()">🗑 מחק</button>
+      <button class="btn btn-primary" onclick="A.saveSuperBrandEdit()">שמור</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -627,50 +639,48 @@ const A = {
 
   // ── LOAD ALL DATA ────────────────────────
   async loadAll() {
-    await Promise.all([this.loadWallets(), this.loadVouchers()]);
+    await this.loadWallets();   // must finish first — loadVouchers needs this.wallets
+    await this.loadVouchers();
     this._setupRealtime();
   },
 
-  // ── WALLETS ──────────────────────────────
+  // ── WALLET (single per user) ──────────────
   async loadWallets() {
     if (!this.user) return;
-    // 1. ensure user has a personal wallet
     try {
-      const {data:owned} = await this.db.from('wallets')
-        .select('*').eq('owner_id', this.user.id);
-      const {data:membered} = await this.db.from('wallet_members')
-        .select('wallet_id, wallets(*), status')
-        .eq('user_id', this.user.id).eq('status','active');
-
-      let allWallets = [...(owned||[])];
-      (membered||[]).forEach(m => { if (m.wallets) allWallets.push({...m.wallets, _via_member:true}); });
-
-      if (allWallets.length===0) {
-        // create default wallet
-        const {data:w} = await this.db.from('wallets').insert([{owner_id:this.user.id,name:'הארנק שלי'}]).select().single();
-        if (w) allWallets = [w];
+      // get or create the ONE personal wallet
+      let {data:owned, error:oe} = await this.db.from('wallets')
+        .select('*').eq('owner_id', this.user.id).limit(1);
+      if (oe) throw oe;
+      if (!owned||owned.length===0) {
+        const {data:w, error:we} = await this.db.from('wallets')
+          .insert([{owner_id:this.user.id, name:'הארנק שלי'}]).select().single();
+        if (we) throw we;
+        owned = w?[w]:[];
       }
+      this.activeWallet   = owned[0]||null;
+      this.activeWalletId = this.activeWallet?.id||null;
 
-      this.wallets = allWallets;
-      if (!this.activeWalletId && allWallets.length>0) this.activeWalletId = allWallets[0].id;
-
-      // load pending invites for this user
-      const {data:invites} = await this.db.from('wallet_members')
+      // pending invites — by user_id OR email (before user_id is set)
+      const myEmail = this.user.email||'';
+      const {data:inv} = await this.db.from('wallet_members')
         .select('*, wallets(name, owner_id)')
-        .eq('user_id', this.user.id).eq('status','pending');
-      this.pendingInvites = invites || [];
+        .eq('status','pending');
+      // filter client-side (RLS returns only relevant rows)
+      this.pendingInvites = (inv||[]).filter(i=>
+        i.user_id===this.user.id ||
+        (i.invited_email&&i.invited_email.toLowerCase()===myEmail.toLowerCase())
+      );
 
       const notif = document.getElementById('inviteNotif');
       if (notif) notif.classList.toggle('show', this.pendingInvites.length>0);
 
-      // load members of active wallet
       await this.loadMembers();
       this._updateWalletBadge();
-      this._populateWalletSelector();
     } catch(e) {
-      // tables may not exist yet – silently degrade
-      console.warn('Wallet tables not ready:', e.message);
-      this.wallets = [];
+      console.warn('Wallet tables not ready (run migration):', e.message);
+      this.activeWallet=null; this.activeWalletId=null;
+      this.pendingInvites=[]; this.members=[];
     }
   },
 
@@ -679,34 +689,21 @@ const A = {
     try {
       const {data} = await this.db.from('wallet_members')
         .select('*').eq('wallet_id', this.activeWalletId).eq('status','active');
-      this.members = data || [];
+      this.members = data||[];
     } catch(e) { this.members=[]; }
   },
 
-  _isSharedWallet() {
-    return this.members.length > 0;
-  },
+  _isSharedWallet() { return this.members.length>0; },
 
   _updateWalletBadge() {
     const badge = document.getElementById('walletBadge');
     if (!badge) return;
-    const w = this.wallets.find(x=>x.id===this.activeWalletId);
-    if (this._isSharedWallet() && w) {
-      badge.textContent = `👥 ${w.name} — ארנק משותף`;
+    if (this._isSharedWallet()) {
+      badge.textContent=`👥 ארנק משותף — ${this.members.length} שותפים`;
       badge.style.display='inline-block';
     } else {
       badge.style.display='none';
     }
-  },
-
-  _populateWalletSelector() {
-    const sel = document.getElementById('walletSelector');
-    const fg  = document.getElementById('walletSelectorFg');
-    if (!sel||!fg) return;
-    if (this.wallets.length<=1) { fg.style.display='none'; return; }
-    fg.style.display='block';
-    sel.innerHTML = this.wallets.map(w=>`<option value="${w.id}">${w.name}${w._via_member?' (משותף)':''}</option>`).join('');
-    sel.value = this.activeWalletId||'';
   },
 
   // ── INVITE ───────────────────────────────
@@ -750,18 +747,20 @@ const A = {
   // ── VOUCHERS ─────────────────────────────
   async loadVouchers() {
     if (!this.user) return;
-    // Load from personal wallet (user_id) AND shared wallets
-    const walletIds = this.wallets.map(w=>w.id).filter(Boolean);
-
-    let query = this.db.from('vouchers').select('*').eq('user_id', this.user.id);
-    if (walletIds.length>1) {
-      // also grab vouchers from all accessible wallets
-      query = this.db.from('vouchers').select('*')
-        .or(`user_id.eq.${this.user.id},wallet_id.in.(${walletIds.join(',')})`);
+    // always load user's own + anyone sharing their wallet
+    let {data, error} = await this.db.from('vouchers').select('*')
+      .eq('user_id', this.user.id)
+      .order('expiry_date',{ascending:true});
+    // also load vouchers from shared wallet (wallet_id = activeWalletId, different user_id)
+    if (!error && this.activeWalletId) {
+      const {data:shared} = await this.db.from('vouchers').select('*')
+        .eq('wallet_id', this.activeWalletId)
+        .neq('user_id', this.user.id)
+        .order('expiry_date',{ascending:true});
+      if (shared&&shared.length) data=[...(data||[]),...shared];
     }
-    const {data, error} = await query.order('expiry_date',{ascending:true});
     if (error) { console.error(error); return; }
-    const all = data || [];
+    const all = data||[];
     this.vouchers = all.filter(v=>!v.archived);
     this.archived = all.filter(v=>v.archived);
     this.render();
@@ -779,15 +778,13 @@ const A = {
 
   // ── SAVE VOUCHER ─────────────────────────
   async saveVoucher() {
-    const brand   = document.getElementById('brandInput').value.trim();
-    const amt     = parseFloat(document.getElementById('amountInput').value);
-    const date    = document.getElementById('dateInput').value;
-    const code    = document.getElementById('codeInput').value.trim();
-    const dynUrl  = document.getElementById('dynamicUrl').value.trim();
-    const notes   = document.getElementById('notesInput').value.trim();
-    const cvv     = document.getElementById('cvvInput').value.trim();
-    const walSel  = document.getElementById('walletSelector');
-    const walletId = (walSel && walSel.style.display!=='none') ? walSel.value : (this.activeWalletId||null);
+    const brand  = document.getElementById('brandInput').value.trim();
+    const amt    = parseFloat(document.getElementById('amountInput').value);
+    const date   = document.getElementById('dateInput').value;
+    const code   = document.getElementById('codeInput').value.trim();
+    const dynUrl = document.getElementById('dynamicUrl').value.trim();
+    const notes  = document.getElementById('notesInput').value.trim();
+    const cvv    = document.getElementById('cvvInput').value.trim();
 
     if (!brand) { this.toast('יש להזין שם חנות',true); return; }
     if (!amt||amt<=0) { this.toast('יש להזין סכום תקין',true); return; }
@@ -797,18 +794,39 @@ const A = {
     const primaryCat = cats[0]||'אחר';
     const isSuperBrand = ALL_SUPER_NAMES.includes(brand);
 
+    // base row — always valid (v31 columns)
+    const baseRow = {
+      user_id:this.user.id,
+      brand_name:brand, category:primaryCat,
+      type:this.vtype,
+      expiry_date:date, code:code||null, dynamic_url:dynUrl||null,
+      notes:notes||null, tags:this.tags, cvv:cvv||null,
+    };
+    // extended row — needs migration-v32/v33 columns
+    const extRow = {
+      ...baseRow,
+      categories:cats, archived:false,
+      is_super_brand:isSuperBrand, accepted_brands:this.selectedAccepted,
+      wallet_id:this.activeWalletId||null,
+    };
+
     if (this.editId) {
-      // EDIT
       const existing = [...this.vouchers,...this.archived].find(v=>v.id===this.editId);
-      const {error} = await this.db.from('vouchers').update({
-        brand_name:brand, category:primaryCat, categories:cats,
-        type:this.vtype, original_value:amt,
+      const updateRow = {
+        ...extRow,
+        original_value:amt,
         current_balance: existing ? Math.min(existing.current_balance,amt) : amt,
-        expiry_date:date, code:code||null, dynamic_url:dynUrl||null,
-        notes:notes||null, tags:this.tags, cvv:cvv||null,
-        is_super_brand:isSuperBrand, accepted_brands:this.selectedAccepted,
-        wallet_id: walletId
-      }).eq('id',this.editId);
+      };
+      delete updateRow.user_id; // can't update owner
+      let {error} = await this.db.from('vouchers').update(updateRow).eq('id',this.editId);
+      if (error) {
+        // fallback without extended cols
+        const {error:e2} = await this.db.from('vouchers').update({
+          ...baseRow, original_value:amt,
+          current_balance: existing ? Math.min(existing.current_balance,amt) : amt,
+        }).eq('id',this.editId);
+        error=e2;
+      }
       if (error) { this.toast('שגיאה: '+error.message,true); return; }
       this.toast('✅ עודכן בהצלחה!'); this.closeAdd(); this.loadVouchers(); return;
     }
@@ -819,14 +837,12 @@ const A = {
       if (dup) { this.toast(`⚠️ קוד "${code}" כבר קיים!`,true); document.getElementById('dupWarn').classList.add('show'); return; }
     }
 
-    const {error} = await this.db.from('vouchers').insert([{
-      user_id:this.user.id, wallet_id:walletId,
-      brand_name:brand, category:primaryCat, categories:cats,
-      type:this.vtype, original_value:amt, current_balance:amt,
-      expiry_date:date, code:code||null, dynamic_url:dynUrl||null,
-      notes:notes||null, tags:this.tags, cvv:cvv||null,
-      archived:false, is_super_brand:isSuperBrand, accepted_brands:this.selectedAccepted
-    }]);
+    // try full insert, fall back to base if columns missing
+    let {error} = await this.db.from('vouchers').insert([{...extRow, original_value:amt, current_balance:amt}]);
+    if (error) {
+      const {error:e2} = await this.db.from('vouchers').insert([{...baseRow, original_value:amt, current_balance:amt}]);
+      error=e2;
+    }
     if (error) { this.toast('שגיאה: '+error.message,true); return; }
     this.toast('✅ השובר נוסף!'); this.closeAdd(); this.loadVouchers();
   },
@@ -1285,13 +1301,94 @@ const A = {
   },
 
   // ── RENDER SETTINGS ──────────────────────
+  // ── SUPER-BRAND MANAGEMENT ───────────────
+  _getSuperCatalog() {
+    const custom = JSON.parse(localStorage.getItem('superCatalogEdits')||'{}');
+    const result = {};
+    Object.entries(SUPER_CATALOG).forEach(([k,v])=>{
+      result[k] = custom[k]!==undefined ? [...(custom[k]||[])] : [...v];
+    });
+    Object.entries(custom).forEach(([k,v])=>{
+      if (!(k in SUPER_CATALOG)) result[k]=v||[];
+    });
+    return Object.fromEntries(Object.entries(result).filter(([,v])=>v&&v.length>0));
+  },
+  _saveSuperCatalog(catalog) {
+    const edits = {...catalog};
+    Object.keys(SUPER_CATALOG).forEach(k=>{ if (!(k in catalog)) edits[k]=[]; });
+    localStorage.setItem('superCatalogEdits', JSON.stringify(edits));
+    // update runtime
+    ALL_SUPER_NAMES.length=0;
+    Object.keys(catalog).forEach(k=>ALL_SUPER_NAMES.push(k));
+  },
+  openSuperBrandEdit(name) {
+    const isNew = name==='__new__';
+    const catalog = this._getSuperCatalog();
+    document.getElementById('sbEditModal').classList.add('open');
+    document.getElementById('sbEditTitle').textContent = isNew?'➕ שובר-על חדש':`✏️ עריכת ${name}`;
+    document.getElementById('sbEditName').value = isNew?'':name;
+    document.getElementById('sbEditName').readOnly = !isNew&&(name in SUPER_CATALOG);
+    document.getElementById('sbEditStores').value = (catalog[name]||[]).join('\n');
+    document.getElementById('sbDeleteBtn').style.display = isNew?'none':'block';
+    this._editingSB = name;
+  },
+  closeSuperBrandEdit() {
+    document.getElementById('sbEditModal').classList.remove('open');
+    this._editingSB=null;
+  },
+  saveSuperBrandEdit() {
+    const name = document.getElementById('sbEditName').value.trim();
+    if (!name) { this.toast('הזן שם לשובר-על',true); return; }
+    const stores = document.getElementById('sbEditStores').value
+      .split(/[\n,،]+/).map(s=>s.trim()).filter(Boolean);
+    if (!stores.length) { this.toast('הוסף לפחות חנות אחת',true); return; }
+    const catalog = this._getSuperCatalog();
+    if (this._editingSB&&this._editingSB!=='__new__'&&this._editingSB!==name) delete catalog[this._editingSB];
+    catalog[name]=stores;
+    this._saveSuperCatalog(catalog);
+    this._refreshBrandlist();
+    this.closeSuperBrandEdit();
+    this.renderSettings();
+    this.toast('✅ שובר-על עודכן');
+  },
+  deleteSuperBrand() {
+    const name=this._editingSB;
+    if (!name||name==='__new__') return;
+    if (!confirm(`למחוק "${name}" מרשימת שוברי-העל?`)) return;
+    const catalog=this._getSuperCatalog();
+    delete catalog[name];
+    this._saveSuperCatalog(catalog);
+    this._refreshBrandlist();
+    this.closeSuperBrandEdit();
+    this.renderSettings();
+    this.toast('🗑️ נמחק');
+  },
+  addStoresToSuperBrand(name) {
+    const safeId=name.replace(/[^a-zA-Z0-9]/g,'_');
+    const inp=document.getElementById('sbbulk_'+safeId);
+    if (!inp||!inp.value.trim()) return;
+    const newStores=inp.value.split(/[\n,،]+/).map(s=>s.trim()).filter(Boolean);
+    if (!newStores.length) return;
+    const catalog=this._getSuperCatalog();
+    catalog[name]=[...new Set([...(catalog[name]||[]),...newStores])];
+    this._saveSuperCatalog(catalog);
+    inp.value='';
+    this.renderSettings();
+    this.toast(`✅ נוספו ${newStores.length} חנויות`);
+  },
+  removeStoreFromSuperBrand(superName,store) {
+    const catalog=this._getSuperCatalog();
+    catalog[superName]=(catalog[superName]||[]).filter(s=>s!==store);
+    if (!catalog[superName].length) delete catalog[superName];
+    this._saveSuperCatalog(catalog);
+    this.renderSettings();
+  },
+
   renderSettings() {
     const body=document.getElementById('settingsBody');
     if (!body) return;
-    const activeW=this.wallets.find(w=>w.id===this.activeWalletId);
-    const isOwner=activeW&&activeW.owner_id===this.user.id;
+    const isOwner=this.activeWallet&&this.activeWallet.owner_id===this.user.id;
 
-    // pending invitations
     const invHtml=this.pendingInvites.map(inv=>`
       <div class="invite-banner">
         <div class="inv-icon">📨</div>
@@ -1305,65 +1402,63 @@ const A = {
         </div>
       </div>`).join('');
 
-    // members list
     const membersHtml=this.members.map(m=>`
       <div class="member-row">
         <div class="member-avatar">👤</div>
         <div class="member-info">
           <div class="member-email">${m.invited_email||m.user_id||'—'}</div>
-          <div class="member-status ${m.status==='pending'?'pending':''}">${m.status==='pending'?'ממתין לאישור':'פעיל'}</div>
+          <div class="member-status">פעיל</div>
         </div>
         ${isOwner?`<button class="member-remove" onclick="A.removeMember('${m.id}')">הסר</button>`:''}
       </div>`).join('');
 
-    // wallet switcher
-    const walletSwitchHtml=this.wallets.length>1 ? `
-      <div class="settings-section">
-        <h3>ארנקים זמינים</h3>
-        ${this.wallets.map(w=>`
-          <div class="wallet-card ${w.id===this.activeWalletId?'active-wallet':''}" style="cursor:pointer" onclick="A.switchWallet('${w.id}')">
-            <div class="wallet-name">${w.name}${w._via_member?' 👥':''}</div>
-            <div class="wallet-meta">${w.id===this.activeWalletId?'✅ פעיל כעת':''}</div>
-          </div>`).join('')}
-      </div>` : '';
+    const catalog=this._getSuperCatalog();
+    const superHtml=Object.entries(catalog).map(([name,stores])=>{
+      const sid=name.replace(/[^a-zA-Z0-9]/g,'_');
+      return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="font-weight:900;font-size:15px">⭐ ${name}</span>
+          <button onclick="A.openSuperBrandEdit('${name}')" style="background:rgba(0,255,136,.12);border:1px solid rgba(0,255,136,.3);border-radius:8px;color:var(--accent);padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">✏️ ערוך הכל</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">
+          ${stores.map(s=>`<span style="background:rgba(255,170,0,.1);border:1px solid rgba(255,170,0,.25);border-radius:6px;padding:2px 8px;font-size:11px;color:var(--warn);display:inline-flex;align-items:center;gap:4px">${s}<button onclick="A.removeStoreFromSuperBrand('${name}','${s.replace(/'/g,"\\'")}')" style="background:none;border:none;color:var(--warn);cursor:pointer;font-size:13px;line-height:1;padding:0;opacity:.7">×</button></span>`).join('')}
+        </div>
+        <div style="display:flex;gap:7px">
+          <input id="sbbulk_${sid}" style="flex:1;padding:8px 11px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:var(--font);font-size:12px" placeholder="הוסף חנויות (פסיק / שורה חדשה)">
+          <button onclick="A.addStoresToSuperBrand('${name}')" style="padding:8px 13px;background:rgba(255,170,0,.14);border:1px solid rgba(255,170,0,.3);border-radius:9px;color:var(--warn);font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">+ הוסף</button>
+        </div>
+      </div>`;
+    }).join('');
 
     body.innerHTML=`
       ${invHtml?`<div class="settings-section"><h3>הזמנות</h3>${invHtml}</div>`:''}
-      ${walletSwitchHtml}
       <div class="settings-section">
-        <h3>הארנק הנוכחי — ${activeW?.name||'—'}</h3>
+        <h3>שיתוף ארנק</h3>
         <div class="wallet-card active-wallet">
-          <div class="wallet-name">${activeW?.name||'הארנק שלי'}</div>
-          <div class="wallet-meta">${isOwner?'אתה הבעלים':'אתה חבר'}</div>
+          <div class="wallet-name">🎟️ ${this.activeWallet?.name||'הארנק שלי'}</div>
+          <div class="wallet-meta">${isOwner?`אתה הבעלים — ${this.members.length} שותפים`:'אתה חבר בארנק'}</div>
         </div>
         ${isOwner?`
-          <h3 style="margin-top:20px">חברים בארנק</h3>
-          ${membersHtml||'<p style="font-size:13px;color:var(--muted);padding:8px 0">אין חברים עדיין</p>'}
-          <div class="invite-row">
-            <input type="email" id="inviteEmailInput" placeholder="אימייל לשליחת הזמנה..." autocomplete="email">
-            <button class="invite-btn" onclick="A.inviteUser(document.getElementById('inviteEmailInput').value)">📨 הזמן</button>
+          <div style="margin-top:14px">
+            ${membersHtml||'<p style="font-size:13px;color:var(--muted)">אין חברים עדיין — הזמן בני משפחה!</p>'}
+            <div class="invite-row" style="margin-top:12px">
+              <input type="email" id="inviteEmailInput" placeholder="אימייל לשליחת הזמנה...">
+              <button class="invite-btn" onclick="A.inviteUser(document.getElementById('inviteEmailInput').value)">📨 הזמן</button>
+            </div>
+            <p style="font-size:11px;color:var(--muted);margin-top:8px">המוזמן יראה הזמנה בכרטיסיית ⚙️</p>
           </div>
-        `:`<p style="font-size:13px;color:var(--muted);margin-top:12px">רק בעל הארנק יכול להזמין חברים</p>`}
+        `:'<p style="font-size:13px;color:var(--muted);margin-top:12px">רק בעל הארנק יכול להזמין</p>'}
       </div>
       <div class="settings-section">
-        <h3>שוברי-על מוכרים</h3>
-        ${Object.entries(SUPER_CATALOG).map(([name,stores])=>`
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px">
-            <div style="font-weight:700;margin-bottom:6px">⭐ ${name}</div>
-            <div style="font-size:12px;color:var(--muted);line-height:1.7">${stores.join(' · ')}</div>
-          </div>`).join('')}
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <h3 style="margin:0">שוברי-על</h3>
+          <button onclick="A.openSuperBrandEdit('__new__')" style="background:rgba(0,255,136,.14);border:1px solid rgba(0,255,136,.3);border-radius:9px;color:var(--accent);padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">+ הוסף שובר-על</button>
+        </div>
+        ${superHtml}
       </div>`;
   },
 
-  async switchWallet(walletId) {
-    this.activeWalletId=walletId;
-    await this.loadMembers();
-    this._updateWalletBadge();
-    this._populateWalletSelector();
-    await this.loadVouchers();
-    this.renderSettings();
-    this.toast('✅ עברת לארנק');
-  },
+
 };
 
 document.addEventListener('DOMContentLoaded', ()=>{
