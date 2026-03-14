@@ -321,6 +321,24 @@ html,body{height:100%;width:100%;font-family:var(--font);background:var(--bg);co
 .cat-bar{height:4px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden;margin-bottom:13px}
 .cat-fill{height:100%;background:var(--accent);border-radius:4px}
 
+/* brand picker list */
+.bp-item{padding:12px 18px;font-size:14px;font-weight:500;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s;display:flex;align-items:center;gap:10px}
+.bp-item:hover,.bp-item:active{background:rgba(255,255,255,.06)}
+.bp-item.bp-super{color:var(--warn)}
+.bp-item .bp-emoji{font-size:20px;width:28px;text-align:center;flex-shrink:0}
+.bp-section{padding:6px 18px;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;background:rgba(255,255,255,.02)}
+/* profile fields */
+.profile-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.profile-row:last-child{border-bottom:none}
+.profile-label{font-size:11px;font-weight:700;color:var(--muted);width:70px;flex-shrink:0;text-transform:uppercase;letter-spacing:.3px}
+.profile-val{flex:1;font-size:14px}
+.profile-edit-btn{background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.25);color:var(--accent);padding:5px 11px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)}
+/* admin section cards */
+.admin-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px}
+.admin-card h3{font-size:14px;font-weight:900;margin-bottom:12px;color:var(--shared)}
+.admin-stat-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px}
+.admin-stat-row:last-child{border-bottom:none}
+.admin-stat-val{font-weight:900;color:var(--accent)}
 /* loading / saving states */
 .btn:disabled{opacity:.5;cursor:not-allowed;transform:none !important}
 .btn-loading{position:relative;color:transparent !important}
@@ -372,7 +390,10 @@ html,body{height:100%;width:100%;font-family:var(--font);background:var(--bg);co
   <div id="homeTab" class="tab-panel">
     <div class="offline-banner" id="offlineBanner">⚡ מצב לא מקוון — מציג נתונים שמורים. לא ניתן לעדכן שוברים משותפים.</div>
     <div class="header">
-      <div class="header-top"><h1>🎟️ ארנק שוברים</h1><button class="header-btn" onclick="A.logout()">יציאה</button></div>
+      <div class="header-top">
+        <h1>🎟️ ארנק שוברים</h1>
+        <div id="headerUser" style="font-size:12px;color:var(--muted);text-align:left;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+      </div>
       <div class="balance-row"><span class="balance-sym">₪</span><span class="balance-num" id="totalBalance">0</span></div>
       <div class="balance-lbl">סך יתרה פנויה</div>
       <div id="walletBadge" class="wallet-badge" style="display:none"></div>
@@ -408,7 +429,7 @@ html,body{height:100%;width:100%;font-family:var(--font);background:var(--bg);co
 
   <!-- SETTINGS TAB -->
   <div id="settingsScreen">
-    <div class="settings-header"><h2>⚙️ הגדרות ארנק</h2></div>
+    <div class="settings-header"><h2>⚙️ פרופיל והגדרות</h2></div>
     <div class="settings-body" id="settingsBody">טוען...</div>
   </div>
 
@@ -450,20 +471,24 @@ html,body{height:100%;width:100%;font-family:var(--font);background:var(--bg);co
       <div class="fg" style="margin-bottom:17px">
         <label>חנות / רשת *</label>
         <div class="brand-row">
-          <div class="fg" style="margin-bottom:0">
-            <input type="text" id="brandInput" placeholder="פוקס, זארה, BuyMe..." list="blist" autocomplete="off" oninput="A.onBrandInput()">
-            <datalist id="blist"></datalist>
+          <div class="fg" style="margin-bottom:0;position:relative">
+            <input type="text" id="brandInput" placeholder="הקלד או בחר מהרשימה..." autocomplete="off"
+              oninput="A.onBrandInput()" onclick="A.openBrandPicker()"
+              style="cursor:pointer;padding-left:32px">
+            <button onclick="A.openBrandPicker()" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px;z-index:1">▾</button>
           </div>
           <button class="brand-add-btn" onclick="A.openBrandModal()" title="הוסף חנות חדשה">+</button>
         </div>
       </div>
 
-      <!-- SUPER-BRAND accepted stores section -->
+      <!-- SUPER-BRAND auto-notice -->
       <div id="superBrandSection" style="display:none;margin-bottom:17px">
-        <div style="background:rgba(255,170,0,.06);border:1px solid rgba(255,170,0,.2);border-radius:14px;padding:14px">
-          <div style="font-size:11px;font-weight:700;color:var(--warn);margin-bottom:10px;text-transform:uppercase;letter-spacing:.4px">⭐ שובר-על — באילו רשתות תקף?</div>
-          <div class="chip-group" id="acceptedBrandsChips"></div>
-          <div style="font-size:11px;color:var(--muted);margin-top:8px">בחר את הרשתות המכבדות שובר זה</div>
+        <div style="background:rgba(255,170,0,.06);border:1px solid rgba(255,170,0,.2);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px">
+          <span style="font-size:22px">⭐</span>
+          <div>
+            <div style="font-size:12px;font-weight:900;color:var(--warn)">שובר-על</div>
+            <div id="superBrandNotice" style="font-size:11px;color:var(--muted);margin-top:2px">תקף אוטומטית בכל החנויות המשויכות</div>
+          </div>
         </div>
       </div>
 
@@ -529,6 +554,33 @@ html,body{height:100%;width:100%;font-family:var(--font);background:var(--bg);co
       </div>
     </div>
   </div>
+</div>
+
+<!-- BRAND PICKER MODAL -->
+<div class="center-modal" id="brandPickerModal">
+  <div class="center-box" style="max-width:420px;padding:0;overflow:hidden;max-height:80vh;display:flex;flex-direction:column">
+    <div style="padding:16px 18px 12px;border-bottom:1px solid var(--border);flex-shrink:0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h3 style="font-size:17px;font-weight:900">בחר חנות</h3>
+        <button onclick="A.closeBrandPicker()" style="background:var(--surface);border:1px solid var(--border);color:var(--muted);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px">✕</button>
+      </div>
+      <input type="search" id="brandPickerSearch" placeholder="חיפוש..." autocomplete="off"
+        style="width:100%;padding:10px 12px;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--font);font-size:14px">
+    </div>
+    <div id="brandPickerList" style="overflow-y:auto;flex:1;padding:8px 0"></div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL (full screen overlay) -->
+<div id="adminPanel" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:250;flex-direction:column;overflow-y:auto">
+  <div style="padding:52px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-shrink:0;background:linear-gradient(to bottom,rgba(0,200,255,.06),transparent)">
+    <button onclick="A.closeAdmin()" style="background:var(--surface);border:1px solid var(--border);color:var(--text);width:38px;height:38px;border-radius:10px;cursor:pointer;font-size:19px;display:flex;align-items:center;justify-content:center;flex-shrink:0">←</button>
+    <div>
+      <h2 style="font-size:21px;font-weight:900;color:var(--shared)">🛡️ פאנל מנהל</h2>
+      <p style="font-size:12px;color:var(--muted);margin-top:2px">גישה מלאה לניהול הארנק</p>
+    </div>
+  </div>
+  <div id="adminBody" style="padding:16px 20px 100px"></div>
 </div>
 
 <!-- ADD BRAND MODAL -->
@@ -722,6 +774,11 @@ const A = {
     const el = document.getElementById('appScreen');
     el.classList.add('on');
     el.style.cssText='display:flex;position:fixed;inset:0;flex-direction:column';
+    // show user name/email in header
+    const meta = this.user?.user_metadata||{};
+    const label = meta.display_name || this.user?.email?.split('@')[0] || '';
+    const hu = document.getElementById('headerUser');
+    if (hu && label) hu.textContent = label;
   },
 
   // ── LOAD ALL DATA ────────────────────────
@@ -956,13 +1013,28 @@ const A = {
         if (dup) { this.toast(`⚠️ קוד "${this._esc(code)}" כבר קיים!`,true); document.getElementById('dupWarn').classList.add('show'); return; }
       }
 
-      let {error} = await this.db.from('vouchers').insert([{...extRow, original_value:amt, current_balance:amt}]);
-      if (error) {
-        const {error:e2} = await this.db.from('vouchers').insert([{...baseRow, original_value:amt, current_balance:amt}]);
-        error=e2;
-      }
-      if (error) throw error;
-      this.toast('✅ השובר נוסף!'); this.closeAdd(); this.loadVouchers();
+    // tier-1: full row (needs migration v33)
+    // tier-2: without wallet/super-brand cols (needs migration v32)
+    // tier-3: absolute minimum (original schema)
+    const tier1 = {...extRow, original_value:amt, current_balance:amt};
+    const tier2 = {...baseRow, categories:cats, archived:false, original_value:amt, current_balance:amt};
+    const tier3 = {
+      user_id:this.user.id,
+      brand_name:brand, category:primaryCat,
+      original_value:amt, current_balance:amt,
+      expiry_date:date,
+    };
+
+    const tryInsert = async (row) => {
+      const {error} = await this.db.from('vouchers').insert([row]);
+      return error;
+    };
+
+    let insertError = await tryInsert(tier1);
+    if (insertError) insertError = await tryInsert(tier2);
+    if (insertError) insertError = await tryInsert(tier3);
+    if (insertError) throw insertError;
+    this.toast('✅ השובר נוסף!'); this.closeAdd(); this.loadVouchers();
     } catch(e) {
       this.toast('שגיאה: '+e.message, true);
     } finally {
@@ -1128,39 +1200,58 @@ const A = {
   },
   _renderAcceptedChips(brand) {
     const sec = document.getElementById('superBrandSection');
-    const container = document.getElementById('acceptedBrandsChips');
-    // lookup in live catalog (may include user edits)
     const liveCatalog = this._getSuperCatalog();
-    if (!brand||!liveCatalog[brand]) { sec.style.display='none'; return; }
+    if (!brand || !liveCatalog[brand]) { sec.style.display='none'; this.selectedAccepted=[]; return; }
+    // ✅ AUTO-SELECT all stores from this super-brand
+    this.selectedAccepted = [...liveCatalog[brand]];
+    const notice = document.getElementById('superBrandNotice');
+    if (notice) notice.textContent = `תקף ב-${this.selectedAccepted.length} רשתות (${this.selectedAccepted.slice(0,3).join(', ')}${this.selectedAccepted.length>3?` +${this.selectedAccepted.length-3} נוספות`:''})`;
     sec.style.display='block';
-    const stores = liveCatalog[brand];
-    // ✅ XSS: store names come from user-editable localStorage catalog → escape
-    container.innerHTML = stores.map(s => {
-      const es=this._esc(s);
-      return `<div class="mchip sel-warn ${this.selectedAccepted.includes(s)?'sel':''}" 
-        data-store="${es}" onclick="A.toggleAccepted(this.dataset.store)">${es}</div>`;
-    }).join('');
   },
-  toggleAccepted(store) {
-    const i = this.selectedAccepted.indexOf(store);
-    if (i===-1) this.selectedAccepted.push(store);
-    else this.selectedAccepted.splice(i,1);
-    document.querySelectorAll('#acceptedBrandsChips .mchip').forEach(el=>{
-      el.classList.toggle('sel', this.selectedAccepted.includes(el.dataset.store));
-    });
+  toggleAccepted(store) {}, // no-op — all selected automatically
+
+  // ── BRAND PICKER (mobile-friendly) ───────
+  openBrandPicker() {
+    document.getElementById('brandPickerModal').classList.add('open');
+    const search = document.getElementById('brandPickerSearch');
+    search.value = '';
+    this._renderBrandPickerList('');
+    setTimeout(()=>search.focus(), 150);
+    search.oninput = ()=>this._renderBrandPickerList(search.value.toLowerCase());
+  },
+  closeBrandPicker() { document.getElementById('brandPickerModal').classList.remove('open'); },
+  _renderBrandPickerList(q) {
+    const list = document.getElementById('brandPickerList');
+    const brands = this._getBrands();
+    const catalog = this._getSuperCatalog();
+    const superNames = Object.keys(catalog);
+    const filtered = q ? brands.filter(b=>b.toLowerCase().includes(q)||b.includes(q)) : brands;
+    const superFiltered = filtered.filter(b=>superNames.includes(b));
+    const regularFiltered = filtered.filter(b=>!superNames.includes(b));
+    let html = '';
+    if (superFiltered.length) {
+      html += `<div class="bp-section">⭐ שוברי-על</div>`;
+      html += superFiltered.map(b=>`<div class="bp-item bp-super" data-brand="${this._esc(b)}" onclick="A.pickBrand(this.dataset.brand)">⭐ ${this._esc(b)}</div>`).join('');
+    }
+    if (regularFiltered.length) {
+      html += `<div class="bp-section">חנויות</div>`;
+      html += regularFiltered.map(b=>`<div class="bp-item" data-brand="${this._esc(b)}" onclick="A.pickBrand(this.dataset.brand)">${this._esc(b)}</div>`).join('');
+    }
+    if (!filtered.length) html = `<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">לא נמצאו תוצאות<br><span style="font-size:11px;margin-top:6px;display:block">לחץ + להוסיף חנות חדשה</span></div>`;
+    list.innerHTML = html;
+  },
+  pickBrand(name) {
+    document.getElementById('brandInput').value = name;
+    this.closeBrandPicker();
+    this.onBrandInput();
   },
 
   // ── BRANDS ───────────────────────────────
   _getBrands() {
     const custom = JSON.parse(localStorage.getItem('customBrands')||'[]');
-    return [...new Set([...DEFAULT_BRANDS,...custom])].sort();
+    return [...new Set([...DEFAULT_BRANDS,...custom])].sort((a,b)=>a.localeCompare(b,'he'));
   },
-  _refreshBrandlist() {
-    const dl = document.getElementById('blist');
-    if (!dl) return;
-    // datalist options: value attr is safe via _esc
-    dl.innerHTML = this._getBrands().map(b=>`<option value="${this._esc(b)}">`).join('');
-  },
+  _refreshBrandlist() {}, // kept for compatibility — no datalist anymore
   openBrandModal() { document.getElementById('brandModal').classList.add('open'); document.getElementById('newBrandInput').value=''; },
   closeBrandModal() { document.getElementById('brandModal').classList.remove('open'); },
   saveBrand() {
@@ -1168,7 +1259,6 @@ const A = {
     if (!name) return;
     const custom = JSON.parse(localStorage.getItem('customBrands')||'[]');
     if (!custom.includes(name)) { custom.push(name); localStorage.setItem('customBrands',JSON.stringify(custom)); }
-    this._refreshBrandlist();
     document.getElementById('brandInput').value=name;
     this.closeBrandModal();
     this.toast('✅ החנות נוספה');
@@ -1439,8 +1529,131 @@ const A = {
     </div>`;
   },
 
-  // ── RENDER SETTINGS ──────────────────────
-  // ── SUPER-BRAND MANAGEMENT ───────────────
+  // ── ADMIN PANEL ──────────────────────────
+  openAdmin() {
+    document.getElementById('adminPanel').style.display='flex';
+    this.renderAdmin();
+  },
+  closeAdmin() { document.getElementById('adminPanel').style.display='none'; },
+
+  renderAdmin() {
+    const body = document.getElementById('adminBody');
+    if (!body) return;
+
+    // stats for admin
+    const allV = [...this.vouchers, ...this.archived];
+    const active = this.vouchers.filter(v=>this._days(v.expiry_date)>=0);
+    const totalBal = active.reduce((s,v)=>s+(v.current_balance||0),0);
+    const expiringSoon = active.filter(v=>{ const d=this._days(v.expiry_date); return d>=0&&d<=14; });
+    const totalOriginal = allV.reduce((s,v)=>s+(v.original_value||0),0);
+    const totalUsed = allV.reduce((s,v)=>s+((v.original_value||0)-(v.current_balance||0)),0);
+
+    // members
+    const membersHtml = this.members.map(m=>`
+      <div class="admin-stat-row">
+        <span>👤 ${this._esc(m.invited_email||m.user_id||'—')}</span>
+        <button class="member-remove" onclick="A.removeMember('${m.id}')">הסר</button>
+      </div>`).join('') || '<p style="font-size:13px;color:var(--muted)">אין חברים עדיין</p>';
+
+    // super-brand catalog
+    const catalog = this._getSuperCatalog();
+    const superHtml = Object.entries(catalog).map(([name,stores])=>{
+      const sid = name.replace(/[^a-zA-Z0-9]/g,'_');
+      const ename = this._esc(name);
+      return `<div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-weight:900">⭐ ${ename}</span>
+          <button class="sb-edit-btn" data-sbname="${ename}" style="background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.25);border-radius:7px;color:var(--accent);padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">✏️</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.8">${stores.map(s=>this._esc(s)).join(' · ')}</div>
+        <div style="display:flex;gap:7px;margin-top:10px">
+          <input id="sbbulk_${sid}" data-sbname="${ename}" style="flex:1;padding:7px 10px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:12px" placeholder="הוסף חנויות (פסיק / שורה)">
+          <button class="sb-add-btn" data-sbsid="${sid}" style="padding:7px 12px;background:rgba(255,170,0,.14);border:1px solid rgba(255,170,0,.3);border-radius:8px;color:var(--warn);font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer">+ הוסף</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    // wallet name edit
+    const wname = this._esc(this.activeWallet?.name||'הארנק שלי');
+
+    body.innerHTML = `
+      <!-- סטטיסטיקות -->
+      <div class="admin-card">
+        <h3>📊 סטטיסטיקות ארנק</h3>
+        <div class="admin-stat-row"><span>יתרה פנויה כוללת</span><span class="admin-stat-val">₪${totalBal.toLocaleString()}</span></div>
+        <div class="admin-stat-row"><span>שוברים פעילים</span><span class="admin-stat-val">${active.length}</span></div>
+        <div class="admin-stat-row"><span>שוברים בארכיון</span><span class="admin-stat-val">${this.archived.length}</span></div>
+        <div class="admin-stat-row"><span>פגים תוך 14 יום</span><span class="admin-stat-val" style="color:var(--warn)">${expiringSoon.length}</span></div>
+        <div class="admin-stat-row"><span>סה"כ שווי רכישות</span><span class="admin-stat-val">₪${totalOriginal.toLocaleString()}</span></div>
+        <div class="admin-stat-row"><span>סה"כ נוצל</span><span class="admin-stat-val" style="color:var(--archive)">₪${totalUsed.toLocaleString()}</span></div>
+      </div>
+
+      <!-- שם הארנק -->
+      <div class="admin-card">
+        <h3>🏷️ שם הארנק</h3>
+        <div style="display:flex;gap:8px">
+          <input id="walletNameInput" value="${wname}" style="flex:1;padding:11px 13px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--font);font-size:14px">
+          <button onclick="A.renameWallet()" style="padding:11px 16px;background:rgba(0,255,136,.14);border:1px solid rgba(0,255,136,.3);border-radius:10px;color:var(--accent);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer">שמור</button>
+        </div>
+      </div>
+
+      <!-- חברים -->
+      <div class="admin-card">
+        <h3>👥 ניהול חברים (${this.members.length} חברים)</h3>
+        ${membersHtml}
+        <div class="invite-row" style="margin-top:12px">
+          <input type="email" id="inviteEmailInput" placeholder="אימייל לשליחת הזמנה...">
+          <button class="invite-btn" onclick="A.inviteUser(document.getElementById('inviteEmailInput').value)">📨 הזמן</button>
+        </div>
+      </div>
+
+      <!-- שוברי-על -->
+      <div class="admin-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h3 style="margin:0">⭐ ניהול שוברי-על</h3>
+          <button onclick="A.openSuperBrandEdit('__new__')" style="background:rgba(255,170,0,.14);border:1px solid rgba(255,170,0,.3);border-radius:9px;color:var(--warn);padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">+ חדש</button>
+        </div>
+        ${superHtml}
+      </div>
+
+      <!-- ייצוא נתונים -->
+      <div class="admin-card">
+        <h3>📤 ייצוא נתונים</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:12px">הורד את כל השוברים כקובץ CSV</p>
+        <button onclick="A.exportCSV()" style="width:100%;padding:12px;background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.25);border-radius:10px;color:var(--accent);font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer">⬇️ הורד CSV</button>
+      </div>`;
+  },
+
+  async renameWallet() {
+    const name = document.getElementById('walletNameInput')?.value.trim();
+    if (!name||!this.activeWalletId) return;
+    const {error} = await this.db.from('wallets').update({name}).eq('id',this.activeWalletId);
+    if (error) { this.toast('שגיאה',true); return; }
+    if (this.activeWallet) this.activeWallet.name=name;
+    this.toast('✅ שם הארנק עודכן');
+    this._updateWalletBadge();
+  },
+
+  exportCSV() {
+    const all=[...this.vouchers,...this.archived];
+    const header='שם חנות,קטגוריה,יתרה,ערך מקורי,תאריך תפוגה,קוד,נוצל,בארכיון\n';
+    const rows=all.map(v=>[
+      `"${(v.brand_name||'').replace(/"/g,'""')}"`,
+      `"${(v.category||'').replace(/"/g,'""')}"`,
+      v.current_balance||0,
+      v.original_value||0,
+      v.expiry_date||'',
+      `"${(v.code||'').replace(/"/g,'""')}"`,
+      (v.original_value||0)-(v.current_balance||0),
+      v.archived?'כן':'לא'
+    ].join(',')).join('\n');
+    const blob=new Blob(['\uFEFF'+header+rows],{type:'text/csv;charset=utf-8'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='vouchers-export.csv';
+    a.click();
+    this.toast('✅ הורד בהצלחה');
+  },
   _getSuperCatalog() {
     const custom = JSON.parse(localStorage.getItem('superCatalogEdits')||'{}');
     const result = {};
@@ -1487,7 +1700,8 @@ const A = {
     this._saveSuperCatalog(catalog);
     this._refreshBrandlist();
     this.closeSuperBrandEdit();
-    this.renderSettings();
+    const adminOpen = document.getElementById('adminPanel')?.style.display==='flex';
+    if (adminOpen) this.renderAdmin(); else this.renderSettings();
     this.toast('✅ שובר-על עודכן');
   },
   deleteSuperBrand() {
@@ -1499,7 +1713,8 @@ const A = {
     this._saveSuperCatalog(catalog);
     this._refreshBrandlist();
     this.closeSuperBrandEdit();
-    this.renderSettings();
+    const adminOpen = document.getElementById('adminPanel')?.style.display==='flex';
+    if (adminOpen) this.renderAdmin(); else this.renderSettings();
     this.toast('🗑️ נמחק');
   },
   addStoresToSuperBrand(name) {
@@ -1512,7 +1727,9 @@ const A = {
     catalog[name]=[...new Set([...(catalog[name]||[]),...newStores])];
     this._saveSuperCatalog(catalog);
     inp.value='';
-    this.renderSettings();
+    // re-render whichever screen is currently active
+    const adminOpen = document.getElementById('adminPanel')?.style.display==='flex';
+    if (adminOpen) this.renderAdmin(); else this.renderSettings();
     this.toast(`✅ נוספו ${newStores.length} חנויות`);
   },
   removeStoreFromSuperBrand(superName,store) {
@@ -1520,15 +1737,41 @@ const A = {
     catalog[superName]=(catalog[superName]||[]).filter(s=>s!==store);
     if (!catalog[superName].length) delete catalog[superName];
     this._saveSuperCatalog(catalog);
-    this.renderSettings();
+    const adminOpen = document.getElementById('adminPanel')?.style.display==='flex';
+    if (adminOpen) this.renderAdmin(); else this.renderSettings();
+  },
+
+  // ── PROFILE ──────────────────────────────
+  async saveProfile() {
+    const name  = document.getElementById('profileName')?.value.trim()||'';
+    const phone = document.getElementById('profilePhone')?.value.trim()||'';
+    try {
+      await this.db.auth.updateUser({data:{display_name:name, phone}});
+      this.toast('✅ הפרופיל עודכן');
+    } catch(e) { this.toast('שגיאה: '+e.message, true); }
+  },
+  async changePassword() {
+    const p1 = document.getElementById('newPass1')?.value||'';
+    const p2 = document.getElementById('newPass2')?.value||'';
+    if (p1.length < 6) { this.toast('סיסמה לפחות 6 תווים',true); return; }
+    if (p1 !== p2) { this.toast('הסיסמאות אינן תואמות',true); return; }
+    const {error} = await this.db.auth.updateUser({password:p1});
+    if (error) { this.toast('שגיאה: '+error.message,true); return; }
+    this.toast('✅ הסיסמה עודכנה');
+    document.getElementById('newPass1').value='';
+    document.getElementById('newPass2').value='';
   },
 
   renderSettings() {
-    const body=document.getElementById('settingsBody');
+    const body = document.getElementById('settingsBody');
     if (!body) return;
-    const isOwner=this.activeWallet&&this.activeWallet.owner_id===this.user.id;
+    const isOwner = this.activeWallet?.owner_id === this.user?.id;
+    const meta = this.user?.user_metadata||{};
+    const email = this._esc(this.user?.email||'');
+    const name  = this._esc(meta.display_name||'');
+    const phone = this._esc(meta.phone||'');
 
-    const invHtml=this.pendingInvites.map(inv=>`
+    const invHtml = this.pendingInvites.map(inv=>`
       <div class="invite-banner">
         <div class="inv-icon">📨</div>
         <div class="inv-body">
@@ -1541,64 +1784,51 @@ const A = {
         </div>
       </div>`).join('');
 
-    const membersHtml=this.members.map(m=>`
-      <div class="member-row">
-        <div class="member-avatar">👤</div>
-        <div class="member-info">
-          <div class="member-email">${this._esc(m.invited_email||m.user_id||'—')}</div>
-          <div class="member-status">פעיל</div>
-        </div>
-        ${isOwner?`<button class="member-remove" onclick="A.removeMember('${m.id}')">הסר</button>`:''}
-      </div>`).join('');
+    body.innerHTML = `
+      ${invHtml ? `<div class="settings-section"><h3>📨 הזמנות ממתינות</h3>${invHtml}</div>` : ''}
 
-    const catalog=this._getSuperCatalog();
-    const superHtml=Object.entries(catalog).map(([name,stores])=>{
-      const sid=name.replace(/[^a-zA-Z0-9]/g,'_');
-      const ename=this._esc(name);
-      return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <span style="font-weight:900;font-size:15px">⭐ ${ename}</span>
-          <button onclick="A.openSuperBrandEdit('${ename}')" style="background:rgba(0,255,136,.12);border:1px solid rgba(0,255,136,.3);border-radius:8px;color:var(--accent);padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">✏️ ערוך הכל</button>
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">
-          ${stores.map(s=>{
-            const es=this._esc(s);
-            const ss=s.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-            return `<span style="background:rgba(255,170,0,.1);border:1px solid rgba(255,170,0,.25);border-radius:6px;padding:2px 8px;font-size:11px;color:var(--warn);display:inline-flex;align-items:center;gap:4px">${es}<button onclick="A.removeStoreFromSuperBrand('${ename}','${ss}')" style="background:none;border:none;color:var(--warn);cursor:pointer;font-size:13px;line-height:1;padding:0;opacity:.7">×</button></span>`;
-          }).join('')}
-        </div>
-        <div style="display:flex;gap:7px">
-          <input id="sbbulk_${sid}" style="flex:1;padding:8px 11px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:var(--font);font-size:12px" placeholder="הוסף חנויות (פסיק / שורה חדשה)">
-          <button onclick="A.addStoresToSuperBrand('${ename}')" style="padding:8px 13px;background:rgba(255,170,0,.14);border:1px solid rgba(255,170,0,.3);border-radius:9px;color:var(--warn);font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">+ הוסף</button>
-        </div>
-      </div>`;
-    }).join('');
-
-    body.innerHTML=`
-      ${invHtml?`<div class="settings-section"><h3>הזמנות</h3>${invHtml}</div>`:''}
       <div class="settings-section">
-        <h3>שיתוף ארנק</h3>
-        <div class="wallet-card active-wallet">
-          <div class="wallet-name">🎟️ ${this._esc(this.activeWallet?.name||'הארנק שלי')}</div>
-          <div class="wallet-meta">${isOwner?`אתה הבעלים — ${this.members.length} שותפים`:'אתה חבר בארנק'}</div>
-        </div>
-        ${isOwner?`
-          <div style="margin-top:14px">
-            ${membersHtml||'<p style="font-size:13px;color:var(--muted)">אין חברים עדיין — הזמן בני משפחה!</p>'}
-            <div class="invite-row" style="margin-top:12px">
-              <input type="email" id="inviteEmailInput" placeholder="אימייל לשליחת הזמנה...">
-              <button class="invite-btn" onclick="A.inviteUser(document.getElementById('inviteEmailInput').value)">📨 הזמן</button>
-            </div>
-            <p style="font-size:11px;color:var(--muted);margin-top:8px">המוזמן יראה הזמנה בכרטיסיית ⚙️</p>
+        <h3>👤 פרטי פרופיל</h3>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px">
+          <div class="profile-row">
+            <span class="profile-label">אימייל</span>
+            <span class="profile-val" style="color:var(--muted)">${email}</span>
           </div>
-        `:'<p style="font-size:13px;color:var(--muted);margin-top:12px">רק בעל הארנק יכול להזמין</p>'}
-      </div>
-      <div class="settings-section">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-          <h3 style="margin:0">שוברי-על</h3>
-          <button onclick="A.openSuperBrandEdit('__new__')" style="background:rgba(0,255,136,.14);border:1px solid rgba(0,255,136,.3);border-radius:9px;color:var(--accent);padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">+ הוסף שובר-על</button>
+          <div class="profile-row">
+            <span class="profile-label">שם</span>
+            <input id="profileName" value="${name}" placeholder="השם שלך" style="flex:1;padding:7px 10px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:var(--font);font-size:13px">
+          </div>
+          <div class="profile-row">
+            <span class="profile-label">טלפון</span>
+            <input id="profilePhone" value="${phone}" placeholder="050-000-0000" inputmode="tel" style="flex:1;padding:7px 10px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:var(--font);font-size:13px">
+          </div>
+          <button onclick="A.saveProfile()" class="btn btn-primary" style="width:100%;margin-top:14px;padding:11px">שמור פרטים</button>
         </div>
-        ${superHtml}
+      </div>
+
+      <div class="settings-section">
+        <h3>🔒 שינוי סיסמה</h3>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px">
+          <input type="password" id="newPass1" placeholder="סיסמה חדשה" autocomplete="new-password"
+            style="padding:11px 13px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--font);font-size:14px">
+          <input type="password" id="newPass2" placeholder="אימות סיסמה חדשה" autocomplete="new-password"
+            style="padding:11px 13px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--font);font-size:14px">
+          <button onclick="A.changePassword()" class="btn btn-primary" style="padding:11px">עדכן סיסמה</button>
+        </div>
+      </div>
+
+      ${isOwner ? `
+      <div class="settings-section">
+        <button onclick="A.openAdmin()" style="width:100%;padding:16px;background:linear-gradient(135deg,rgba(0,200,255,.12),rgba(0,200,255,.06));border:1px solid rgba(0,200,255,.35);border-radius:14px;color:var(--shared);font-family:var(--font);font-size:15px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px">
+          🛡️ פאנל מנהל ראשי
+          <span style="font-size:11px;background:rgba(0,200,255,.2);padding:2px 8px;border-radius:6px">רק לך</span>
+        </button>
+      </div>` : ''}
+
+      <div class="settings-section">
+        <button onclick="A.logout()" style="width:100%;padding:13px;background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.25);border-radius:12px;color:var(--danger);font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer">
+          🚪 התנתק
+        </button>
       </div>`;
   },
 
@@ -1616,8 +1846,22 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('sbEditModal').addEventListener('click', e=>{
     if (e.target===document.getElementById('sbEditModal')) A.closeSuperBrandEdit();
   });
+  document.getElementById('brandPickerModal').addEventListener('click', e=>{
+    if (e.target===document.getElementById('brandPickerModal')) A.closeBrandPicker();
+  });
   document.getElementById('newBrandInput').addEventListener('keydown', e=>{
     if (e.key==='Enter') A.saveBrand();
+  });
+  // Event delegation for admin panel — safe alternative to inline onclick with Hebrew strings
+  document.getElementById('adminBody').addEventListener('click', e=>{
+    const editBtn = e.target.closest('.sb-edit-btn');
+    const addBtn  = e.target.closest('.sb-add-btn');
+    if (editBtn) { A.openSuperBrandEdit(editBtn.dataset.sbname); return; }
+    if (addBtn) {
+      const sid = addBtn.dataset.sbsid;
+      const inp = document.getElementById('sbbulk_'+sid);
+      if (inp) A.addStoresToSuperBrand(inp.dataset.sbname);
+    }
   });
 });
 </script>
