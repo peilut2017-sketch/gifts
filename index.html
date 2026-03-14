@@ -5,6 +5,46 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>ארנק שוברים</title>
 <style>@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap');</style>
+<!-- PWA Manifest (inline) -->
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22%D7%90%D7%A8%D7%A0%D7%A7%20%D7%A9%D7%95%D7%91%D7%A8%D7%99%D7%9D%22%2C%22short_name%22%3A%22%D7%A9%D7%95%D7%91%D7%A8%D7%99%D7%9D%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%2300ff88%22%2C%22start_url%22%3A%22.%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20100%20100'%3E%3Ctext%20y%3D'.9em'%20font-size%3D'90'%3E%F0%9F%8E%9F%EF%B8%8F%3C%2Ftext%3E%3C%2Fsvg%3E%22%2C%22sizes%22%3A%22any%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
+<meta name="theme-color" content="#00ff88">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ארנק שוברים">
+<script>
+// Register Service Worker for offline read support
+if ('serviceWorker' in navigator) {
+  const swCode = `
+    const CACHE='voucher-v1';
+    const PRECACHE=[
+      'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
+      'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js',
+      'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js',
+      'https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap'
+    ];
+    self.addEventListener('install', e => {
+      e.waitUntil(caches.open(CACHE).then(c => c.addAll(PRECACHE).catch(()=>{})));
+      self.skipWaiting();
+    });
+    self.addEventListener('activate', e => { e.waitUntil(clients.claim()); });
+    self.addEventListener('fetch', e => {
+      if (e.request.method !== 'GET') return;
+      // Network first for Supabase API, cache first for static assets
+      const url = e.request.url;
+      if (url.includes('supabase.co')) {
+        e.respondWith(fetch(e.request).catch(() => new Response('{"error":"offline"}',{headers:{'Content-Type':'application/json'}})));
+      } else {
+        e.respondWith(caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
+          if (res.ok) caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+          return res;
+        })));
+      }
+    });
+  `;
+  const blob = new Blob([swCode], {type:'application/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
@@ -281,8 +321,21 @@ html,body{height:100%;width:100%;font-family:var(--font);background:var(--bg);co
 .cat-bar{height:4px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden;margin-bottom:13px}
 .cat-fill{height:100%;background:var(--accent);border-radius:4px}
 
-/* TOAST */
-.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(0,255,136,.14);backdrop-filter:blur(10px);border:1px solid rgba(0,255,136,.3);color:var(--accent);padding:11px 18px;border-radius:12px;font-size:13px;font-weight:700;opacity:0;pointer-events:none;transition:all .3s;z-index:999;white-space:nowrap}
+/* loading / saving states */
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none !important}
+.btn-loading{position:relative;color:transparent !important}
+.btn-loading::after{content:'';position:absolute;width:16px;height:16px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);animation:spin .7s linear infinite;color:#000}
+@keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+.skeleton{background:linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.05) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:var(--r);height:72px;margin-bottom:10px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+/* offline banner */
+.offline-banner{background:rgba(255,170,0,.12);border-bottom:1px solid rgba(255,170,0,.3);padding:8px 20px;font-size:12px;font-weight:700;color:var(--warn);text-align:center;display:none;flex-shrink:0}
+.offline-banner.show{display:block}
+/* input focus ring improvement */
+.fg input:focus,.fg select:focus,.fg textarea:focus{box-shadow:0 0 0 3px rgba(0,255,136,.12)}
+/* tag pill overflow protection */
+.v-tag{max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(0,255,136,.14);backdrop-filter:blur(10px);border:1px solid rgba(0,255,136,.3);color:var(--accent);padding:11px 18px;border-radius:12px;font-size:13px;font-weight:700;opacity:0;pointer-events:none;transition:all .3s;z-index:999;white-space:nowrap;max-width:90vw;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .toast.err{background:rgba(255,68,68,.14);border-color:rgba(255,68,68,.3);color:var(--danger)}
 .dyn-dot{width:7px;height:7px;background:#00c8ff;border-radius:50%;display:inline-block;margin-right:4px}
@@ -317,6 +370,7 @@ html,body{height:100%;width:100%;font-family:var(--font);background:var(--bg);co
 
   <!-- HOME TAB -->
   <div id="homeTab" class="tab-panel">
+    <div class="offline-banner" id="offlineBanner">⚡ מצב לא מקוון — מציג נתונים שמורים. לא ניתן לעדכן שוברים משותפים.</div>
     <div class="header">
       <div class="header-top"><h1>🎟️ ארנק שוברים</h1><button class="header-btn" onclick="A.logout()">יציאה</button></div>
       <div class="balance-row"><span class="balance-sym">₪</span><span class="balance-num" id="totalBalance">0</span></div>
@@ -428,7 +482,7 @@ html,body{height:100%;width:100%;font-family:var(--font);background:var(--bg);co
       </div>
 
       <div class="fg-row">
-        <div class="fg"><label id="amtLabel">יתרה (₪) *</label><input type="number" id="amountInput" placeholder="500" min="0"></div>
+        <div class="fg"><label id="amtLabel">יתרה (₪) *</label><input type="number" id="amountInput" placeholder="500" min="0" inputmode="decimal"></div>
         <div class="fg"><label>תאריך תפוגה</label><input type="date" id="dateInput"></div>
       </div>
 
@@ -444,7 +498,7 @@ html,body{height:100%;width:100%;font-family:var(--font);background:var(--bg);co
             <button class="code-tab active" id="ctStatic" onclick="A.setCodeType('static')">קוד סטטי</button>
             <button class="code-tab" id="ctDynamic" onclick="A.setCodeType('dynamic')">קישור דינמי (OTP)</button>
           </div>
-          <div id="staticField" class="fg"><label>קוד אלפא-נומרי</label><input type="text" id="codeInput" placeholder="ABC123456" oninput="A.checkDup()"></div>
+          <div id="staticField" class="fg"><label>קוד אלפא-נומרי</label><input type="text" id="codeInput" placeholder="ABC123456" oninput="A.checkDup()" autocapitalize="characters" autocorrect="off" spellcheck="false" inputmode="text"></div>
           <div id="dynamicField" class="fg" style="display:none"><label>קישור לשובר דינמי</label><input type="url" id="dynamicUrl" placeholder="https://..."></div>
           <div class="fg" style="margin-top:4px">
             <label>CVV / קוד אבטחה <span style="font-weight:400;color:var(--muted);text-transform:none">(אופציונלי)</span></label>
@@ -580,12 +634,45 @@ const A = {
   checkId:null, tags:[], vtype:'voucher', ctype:'static',
   filter:'הכל', tab:'home', wl:null,
   editId:null, selectedCats:[], selectedAccepted:[],
+  _saving:false, _online:true,
+
+  // ── XSS PROTECTION ───────────────────────
+  // MUST wrap ALL user-supplied strings injected into innerHTML
+  _esc(s) {
+    return String(s||'')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  },
+
+  // ── OFFLINE CACHE (localStorage) ─────────
+  _cacheKey() { return 'vc_'+this.user?.id; },
+  _saveCache()  { try { localStorage.setItem(this._cacheKey(), JSON.stringify({v:this.vouchers,a:this.archived,ts:Date.now()})); } catch(e){} },
+  _loadCache()  {
+    try {
+      const d=JSON.parse(localStorage.getItem(this._cacheKey())||'null');
+      if (d) { this.vouchers=d.v||[]; this.archived=d.a||[]; return true; }
+    } catch(e) {}
+    return false;
+  },
+
+  // ── LOADING STATE ─────────────────────────
+  _setSaving(on) {
+    this._saving = on;
+    const btn = document.getElementById('saveBtn');
+    if (!btn) return;
+    btn.disabled = on;
+    btn.classList.toggle('btn-loading', on);
+  },
 
   // ── INIT ─────────────────────────────────
   init() {
     if (!window.supabase) { alert('שגיאה בטעינת Supabase'); return; }
     this.db = window.supabase.createClient(SUPA_URL, SUPA_KEY);
     this._refreshBrandlist();
+    // online/offline monitoring
+    this._online = navigator.onLine;
+    window.addEventListener('offline', ()=>{ this._online=false; document.getElementById('offlineBanner').classList.add('show'); this.toast('⚡ אין חיבור — מציג נתונים שמורים',true); });
+    window.addEventListener('online',  ()=>{ this._online=true;  document.getElementById('offlineBanner').classList.remove('show'); this.toast('✅ חיבור חזר'); this.loadVouchers(); });
     this.db.auth.getSession().then(({data}) => {
       if (data?.session) { this.user = data.session.user; this.showApp(); this.loadAll(); }
     });
@@ -745,24 +832,53 @@ const A = {
   },
 
   // ── VOUCHERS ─────────────────────────────
-  async loadVouchers() {
+  _showSkeleton() {
+    const list=document.getElementById('vouchersList');
+    if (list) list.innerHTML='<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
+  },
+
+  async loadVouchers(retries=2) {
     if (!this.user) return;
-    // always load user's own + anyone sharing their wallet
-    let {data, error} = await this.db.from('vouchers').select('*')
-      .eq('user_id', this.user.id)
-      .order('expiry_date',{ascending:true});
-    // also load vouchers from shared wallet (wallet_id = activeWalletId, different user_id)
-    if (!error && this.activeWalletId) {
-      const {data:shared} = await this.db.from('vouchers').select('*')
-        .eq('wallet_id', this.activeWalletId)
-        .neq('user_id', this.user.id)
-        .order('expiry_date',{ascending:true});
-      if (shared&&shared.length) data=[...(data||[]),...shared];
+
+    // offline: serve cache immediately, skip network
+    if (!this._online) {
+      if (!this.vouchers.length) this._loadCache();
+      this.render();
+      return;
     }
-    if (error) { console.error(error); return; }
-    const all = data||[];
-    this.vouchers = all.filter(v=>!v.archived);
-    this.archived = all.filter(v=>v.archived);
+
+    if (!this.vouchers.length) this._showSkeleton();
+
+    try {
+      let {data, error} = await this.db.from('vouchers').select('*')
+        .eq('user_id', this.user.id)
+        .order('expiry_date',{ascending:true});
+      if (error) throw error;
+
+      // also shared wallet vouchers
+      if (this.activeWalletId) {
+        const {data:shared} = await this.db.from('vouchers').select('*')
+          .eq('wallet_id', this.activeWalletId)
+          .neq('user_id', this.user.id)
+          .order('expiry_date',{ascending:true});
+        if (shared&&shared.length) data=[...(data||[]),...shared];
+      }
+
+      const all=data||[];
+      this.vouchers=all.filter(v=>!v.archived);
+      this.archived=all.filter(v=>v.archived);
+      this._saveCache(); // persist for offline use
+    } catch(e) {
+      if (retries>0) {
+        await new Promise(r=>setTimeout(r,1500));
+        return this.loadVouchers(retries-1);
+      }
+      // fall back to cache
+      const hadCache=this._loadCache();
+      if (!hadCache) { console.error('loadVouchers failed',e); return; }
+      this.toast('⚠️ נטענו נתונים שמורים',true);
+    }
+
     this.render();
     if (this.tab==='archive') this.renderArchive();
     if (this.tab==='stats')   this.renderStats();
@@ -778,6 +894,7 @@ const A = {
 
   // ── SAVE VOUCHER ─────────────────────────
   async saveVoucher() {
+    if (this._saving) return;   // prevent double-submit
     const brand  = document.getElementById('brandInput').value.trim();
     const amt    = parseFloat(document.getElementById('amountInput').value);
     const date   = document.getElementById('dateInput').value;
@@ -789,6 +906,8 @@ const A = {
     if (!brand) { this.toast('יש להזין שם חנות',true); return; }
     if (!amt||amt<=0) { this.toast('יש להזין סכום תקין',true); return; }
     if (!date) { this.toast('יש לבחור תאריך תפוגה',true); return; }
+
+    this._setSaving(true);
 
     const cats = this.selectedCats;
     const primaryCat = cats[0]||'אחר';
@@ -810,41 +929,45 @@ const A = {
       wallet_id:this.activeWalletId||null,
     };
 
-    if (this.editId) {
-      const existing = [...this.vouchers,...this.archived].find(v=>v.id===this.editId);
-      const updateRow = {
-        ...extRow,
-        original_value:amt,
-        current_balance: existing ? Math.min(existing.current_balance,amt) : amt,
-      };
-      delete updateRow.user_id; // can't update owner
-      let {error} = await this.db.from('vouchers').update(updateRow).eq('id',this.editId);
-      if (error) {
-        // fallback without extended cols
-        const {error:e2} = await this.db.from('vouchers').update({
-          ...baseRow, original_value:amt,
+    try {
+      if (this.editId) {
+        const existing = [...this.vouchers,...this.archived].find(v=>v.id===this.editId);
+        const updateRow = {
+          ...extRow,
+          original_value:amt,
           current_balance: existing ? Math.min(existing.current_balance,amt) : amt,
-        }).eq('id',this.editId);
+        };
+        delete updateRow.user_id;
+        let {error} = await this.db.from('vouchers').update(updateRow).eq('id',this.editId);
+        if (error) {
+          const {error:e2} = await this.db.from('vouchers').update({
+            ...baseRow, original_value:amt,
+            current_balance: existing ? Math.min(existing.current_balance,amt) : amt,
+          }).eq('id',this.editId);
+          error=e2;
+        }
+        if (error) throw error;
+        this.toast('✅ עודכן בהצלחה!'); this.closeAdd(); this.loadVouchers(); return;
+      }
+
+      // ADD — duplicate check
+      if (code) {
+        const dup = [...this.vouchers,...this.archived].find(v=>v.code&&v.code===code);
+        if (dup) { this.toast(`⚠️ קוד "${this._esc(code)}" כבר קיים!`,true); document.getElementById('dupWarn').classList.add('show'); return; }
+      }
+
+      let {error} = await this.db.from('vouchers').insert([{...extRow, original_value:amt, current_balance:amt}]);
+      if (error) {
+        const {error:e2} = await this.db.from('vouchers').insert([{...baseRow, original_value:amt, current_balance:amt}]);
         error=e2;
       }
-      if (error) { this.toast('שגיאה: '+error.message,true); return; }
-      this.toast('✅ עודכן בהצלחה!'); this.closeAdd(); this.loadVouchers(); return;
+      if (error) throw error;
+      this.toast('✅ השובר נוסף!'); this.closeAdd(); this.loadVouchers();
+    } catch(e) {
+      this.toast('שגיאה: '+e.message, true);
+    } finally {
+      this._setSaving(false);
     }
-
-    // ADD — duplicate check
-    if (code) {
-      const dup = [...this.vouchers,...this.archived].find(v=>v.code&&v.code===code);
-      if (dup) { this.toast(`⚠️ קוד "${code}" כבר קיים!`,true); document.getElementById('dupWarn').classList.add('show'); return; }
-    }
-
-    // try full insert, fall back to base if columns missing
-    let {error} = await this.db.from('vouchers').insert([{...extRow, original_value:amt, current_balance:amt}]);
-    if (error) {
-      const {error:e2} = await this.db.from('vouchers').insert([{...baseRow, original_value:amt, current_balance:amt}]);
-      error=e2;
-    }
-    if (error) { this.toast('שגיאה: '+error.message,true); return; }
-    this.toast('✅ השובר נוסף!'); this.closeAdd(); this.loadVouchers();
   },
 
   // ── EDIT ─────────────────────────────────
@@ -1006,13 +1129,17 @@ const A = {
   _renderAcceptedChips(brand) {
     const sec = document.getElementById('superBrandSection');
     const container = document.getElementById('acceptedBrandsChips');
-    if (!brand||!SUPER_CATALOG[brand]) { sec.style.display='none'; return; }
+    // lookup in live catalog (may include user edits)
+    const liveCatalog = this._getSuperCatalog();
+    if (!brand||!liveCatalog[brand]) { sec.style.display='none'; return; }
     sec.style.display='block';
-    const stores = SUPER_CATALOG[brand];
-    container.innerHTML = stores.map(s =>
-      `<div class="mchip sel-warn ${this.selectedAccepted.includes(s)?'sel':''}" 
-            data-store="${s}" onclick="A.toggleAccepted('${s}')">${s}</div>`
-    ).join('');
+    const stores = liveCatalog[brand];
+    // ✅ XSS: store names come from user-editable localStorage catalog → escape
+    container.innerHTML = stores.map(s => {
+      const es=this._esc(s);
+      return `<div class="mchip sel-warn ${this.selectedAccepted.includes(s)?'sel':''}" 
+        data-store="${es}" onclick="A.toggleAccepted(this.dataset.store)">${es}</div>`;
+    }).join('');
   },
   toggleAccepted(store) {
     const i = this.selectedAccepted.indexOf(store);
@@ -1031,7 +1158,8 @@ const A = {
   _refreshBrandlist() {
     const dl = document.getElementById('blist');
     if (!dl) return;
-    dl.innerHTML = this._getBrands().map(b=>`<option value="${b}">`).join('');
+    // datalist options: value attr is safe via _esc
+    dl.innerHTML = this._getBrands().map(b=>`<option value="${this._esc(b)}">`).join('');
   },
   openBrandModal() { document.getElementById('brandModal').classList.add('open'); document.getElementById('newBrandInput').value=''; },
   closeBrandModal() { document.getElementById('brandModal').classList.remove('open'); },
@@ -1099,9 +1227,15 @@ const A = {
     const inp=document.getElementById('tagIn');
     wrap.innerHTML='';
     this.tags.forEach(t=>{
-      const p=document.createElement('span'); p.className='tag-pill';
-      p.innerHTML=`${t} <button onclick="A.removeTag('${t}')">×</button>`;
-      wrap.appendChild(p);
+      // ✅ XSS: use DOM APIs, no innerHTML with user data
+      const pill=document.createElement('span'); pill.className='tag-pill';
+      const txt=document.createTextNode(t+' ');
+      const btn=document.createElement('button');
+      btn.textContent='×';
+      btn.setAttribute('aria-label','הסר תגית');
+      btn.addEventListener('click', ()=>A.removeTag(t));
+      pill.appendChild(txt); pill.appendChild(btn);
+      wrap.appendChild(pill);
     });
     wrap.appendChild(inp);
   },
@@ -1228,12 +1362,17 @@ const A = {
       const ec=(v.current_balance===0)?'archive':this._expCls(d);
       const cc=this._cardCls(v);
       const emo=this._getEmoji(v);
-      const tagsHtml=(v.tags||[]).length?v.tags.map(t=>`<span class="v-tag">${t}</span>`).join(''):'';
+      // ✅ XSS: all user-supplied strings escaped
+      const bname=this._esc(v.brand_name);
+      const cat=this._esc(this._getCatDisplay(v));
+      const tagsHtml=(v.tags||[]).length?v.tags.map(t=>`<span class="v-tag">${this._esc(t)}</span>`).join(''):'';
       const dynDot=v.dynamic_url?'<span class="dyn-dot"></span>':'';
       const sharedDot=this._isVoucherShared(v)?'<span class="shared-dot" title="ארנק משותף"></span>':'';
       const superBadge=v.is_super_brand?'<span class="super-badge">שובר-על</span>':'';
       const sharedCardCls=this._isVoucherShared(v)?'shared-card':'';
       const zeroBadge=(v.current_balance===0)?`<span class="expiry-badge archive">יתרה אפס</span>`:`<span class="expiry-badge ${ec}">${this._expTxt(v.expiry_date)}</span>`;
+      const acc=v.accepted_brands&&v.accepted_brands.length
+        ? `<div class="v-cat" style="color:var(--warn);font-size:11px;margin-top:2px">⭐ ${v.accepted_brands.slice(0,3).map(s=>this._esc(s)).join(', ')}${v.accepted_brands.length>3?' +עוד':''}</div>` : '';
       return `<div class="voucher-card ${cc} ${sharedCardCls}" onclick="A.openCheckout('${v.id}')">
         <div class="card-actions">
           <button class="card-btn del"  onclick="A.deleteVoucher('${v.id}',event)">🗑</button>
@@ -1242,9 +1381,9 @@ const A = {
         </div>
         <div class="v-emoji">${emo}</div>
         <div class="v-body">
-          <div class="v-name">${superBadge}${v.brand_name}${sharedDot}</div>
-          <div class="v-cat">${dynDot}${this._getCatDisplay(v)}</div>
-          ${v.accepted_brands&&v.accepted_brands.length?`<div class="v-cat" style="color:var(--warn);font-size:11px;margin-top:2px">⭐ ${v.accepted_brands.slice(0,3).join(', ')}${v.accepted_brands.length>3?' +עוד':''}</div>`:''}
+          <div class="v-name">${superBadge}${bname}${sharedDot}</div>
+          <div class="v-cat">${dynDot}${cat}</div>
+          ${acc}
           ${tagsHtml?`<div class="v-tags">${tagsHtml}</div>`:''}
         </div>
         <div class="v-right">
@@ -1269,7 +1408,7 @@ const A = {
         <button class="card-btn edit" onclick="A.openEdit('${v.id}',event)" style="background:rgba(167,139,250,.15);color:var(--archive)">↩️</button>
       </div>
       <div class="v-emoji">${this._getEmoji(v)}</div>
-      <div class="v-body"><div class="v-name">${v.brand_name}</div><div class="v-cat">${this._getCatDisplay(v)}</div></div>
+      <div class="v-body"><div class="v-name">${this._esc(v.brand_name)}</div><div class="v-cat">${this._esc(this._getCatDisplay(v))}</div></div>
       <div class="v-right"><div class="v-bal zero">₪0</div><span class="expiry-badge archive">בארכיון</span></div>
     </div>`).join('');
   },
@@ -1287,7 +1426,7 @@ const A = {
     });
     const maxV=Math.max(...Object.values(cats),1);
     const catHtml=Object.entries(cats).sort((a,b)=>b[1]-a[1])
-      .map(([c,val])=>`<div class="cat-row"><span>${EMO[c]||'📦'} ${c}</span><span style="color:var(--accent);font-weight:700">₪${val.toLocaleString()}</span></div><div class="cat-bar"><div class="cat-fill" style="width:${(val/maxV*100).toFixed(0)}%"></div></div>`).join('');
+      .map(([c,val])=>`<div class="cat-row"><span>${EMO[c]||'📦'} ${this._esc(c)}</span><span style="color:var(--accent);font-weight:700">₪${val.toLocaleString()}</span></div><div class="cat-bar"><div class="cat-fill" style="width:${(val/maxV*100).toFixed(0)}%"></div></div>`).join('');
     document.getElementById('statsContent').innerHTML=`
     <div class="stats-grid">
       <div class="stat-card"><div class="stat-val">₪${total.toLocaleString()}</div><div class="stat-lbl">סך יתרה פנויה</div></div>
@@ -1393,7 +1532,7 @@ const A = {
       <div class="invite-banner">
         <div class="inv-icon">📨</div>
         <div class="inv-body">
-          <strong>${inv.wallets?.name||'ארנק'}</strong>
+          <strong>${this._esc(inv.wallets?.name||'ארנק')}</strong>
           <p>הוזמנת לשתף ארנק</p>
           <div class="inv-actions">
             <button class="inv-accept" onclick="A.acceptInvite('${inv.id}')">✅ קבל</button>
@@ -1406,7 +1545,7 @@ const A = {
       <div class="member-row">
         <div class="member-avatar">👤</div>
         <div class="member-info">
-          <div class="member-email">${m.invited_email||m.user_id||'—'}</div>
+          <div class="member-email">${this._esc(m.invited_email||m.user_id||'—')}</div>
           <div class="member-status">פעיל</div>
         </div>
         ${isOwner?`<button class="member-remove" onclick="A.removeMember('${m.id}')">הסר</button>`:''}
@@ -1415,17 +1554,22 @@ const A = {
     const catalog=this._getSuperCatalog();
     const superHtml=Object.entries(catalog).map(([name,stores])=>{
       const sid=name.replace(/[^a-zA-Z0-9]/g,'_');
+      const ename=this._esc(name);
       return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <span style="font-weight:900;font-size:15px">⭐ ${name}</span>
-          <button onclick="A.openSuperBrandEdit('${name}')" style="background:rgba(0,255,136,.12);border:1px solid rgba(0,255,136,.3);border-radius:8px;color:var(--accent);padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">✏️ ערוך הכל</button>
+          <span style="font-weight:900;font-size:15px">⭐ ${ename}</span>
+          <button onclick="A.openSuperBrandEdit('${ename}')" style="background:rgba(0,255,136,.12);border:1px solid rgba(0,255,136,.3);border-radius:8px;color:var(--accent);padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">✏️ ערוך הכל</button>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">
-          ${stores.map(s=>`<span style="background:rgba(255,170,0,.1);border:1px solid rgba(255,170,0,.25);border-radius:6px;padding:2px 8px;font-size:11px;color:var(--warn);display:inline-flex;align-items:center;gap:4px">${s}<button onclick="A.removeStoreFromSuperBrand('${name}','${s.replace(/'/g,"\\'")}')" style="background:none;border:none;color:var(--warn);cursor:pointer;font-size:13px;line-height:1;padding:0;opacity:.7">×</button></span>`).join('')}
+          ${stores.map(s=>{
+            const es=this._esc(s);
+            const ss=s.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+            return `<span style="background:rgba(255,170,0,.1);border:1px solid rgba(255,170,0,.25);border-radius:6px;padding:2px 8px;font-size:11px;color:var(--warn);display:inline-flex;align-items:center;gap:4px">${es}<button onclick="A.removeStoreFromSuperBrand('${ename}','${ss}')" style="background:none;border:none;color:var(--warn);cursor:pointer;font-size:13px;line-height:1;padding:0;opacity:.7">×</button></span>`;
+          }).join('')}
         </div>
         <div style="display:flex;gap:7px">
           <input id="sbbulk_${sid}" style="flex:1;padding:8px 11px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:var(--font);font-size:12px" placeholder="הוסף חנויות (פסיק / שורה חדשה)">
-          <button onclick="A.addStoresToSuperBrand('${name}')" style="padding:8px 13px;background:rgba(255,170,0,.14);border:1px solid rgba(255,170,0,.3);border-radius:9px;color:var(--warn);font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">+ הוסף</button>
+          <button onclick="A.addStoresToSuperBrand('${ename}')" style="padding:8px 13px;background:rgba(255,170,0,.14);border:1px solid rgba(255,170,0,.3);border-radius:9px;color:var(--warn);font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">+ הוסף</button>
         </div>
       </div>`;
     }).join('');
@@ -1435,7 +1579,7 @@ const A = {
       <div class="settings-section">
         <h3>שיתוף ארנק</h3>
         <div class="wallet-card active-wallet">
-          <div class="wallet-name">🎟️ ${this.activeWallet?.name||'הארנק שלי'}</div>
+          <div class="wallet-name">🎟️ ${this._esc(this.activeWallet?.name||'הארנק שלי')}</div>
           <div class="wallet-meta">${isOwner?`אתה הבעלים — ${this.members.length} שותפים`:'אתה חבר בארנק'}</div>
         </div>
         ${isOwner?`
@@ -1469,12 +1613,12 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('brandModal').addEventListener('click', e=>{
     if (e.target===document.getElementById('brandModal')) A.closeBrandModal();
   });
+  document.getElementById('sbEditModal').addEventListener('click', e=>{
+    if (e.target===document.getElementById('sbEditModal')) A.closeSuperBrandEdit();
+  });
   document.getElementById('newBrandInput').addEventListener('keydown', e=>{
     if (e.key==='Enter') A.saveBrand();
   });
-  // offline/online detection
-  window.addEventListener('offline', ()=>A.toast('⚡ אין חיבור לאינטרנט',true));
-  window.addEventListener('online',  ()=>A.toast('✅ חיבור חזר'));
 });
 </script>
 </body>
