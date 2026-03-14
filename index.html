@@ -1,1963 +1,810 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>ארנק שוברים</title>
-<style>@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap');</style>
-<!-- PWA Manifest (inline) -->
-<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22%D7%90%D7%A8%D7%A0%D7%A7%20%D7%A9%D7%95%D7%91%D7%A8%D7%99%D7%9D%22%2C%22short_name%22%3A%22%D7%A9%D7%95%D7%91%D7%A8%D7%99%D7%9D%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%2300ff88%22%2C%22start_url%22%3A%22.%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20100%20100'%3E%3Ctext%20y%3D'.9em'%20font-size%3D'90'%3E%F0%9F%8E%9F%EF%B8%8F%3C%2Ftext%3E%3C%2Fsvg%3E%22%2C%22sizes%22%3A%22any%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
-<meta name="theme-color" content="#00ff88">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="ארנק שוברים">
-<script>
-// Register Service Worker for offline read support
-if ('serviceWorker' in navigator) {
-  const swCode = `
-    const CACHE='voucher-v1';
-    const PRECACHE=[
-      'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
-      'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js',
-      'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js',
-      'https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap'
-    ];
-    self.addEventListener('install', e => {
-      e.waitUntil(caches.open(CACHE).then(c => c.addAll(PRECACHE).catch(()=>{})));
-      self.skipWaiting();
-    });
-    self.addEventListener('activate', e => { e.waitUntil(clients.claim()); });
-    self.addEventListener('fetch', e => {
-      if (e.request.method !== 'GET') return;
-      // Network first for Supabase API, cache first for static assets
-      const url = e.request.url;
-      if (url.includes('supabase.co')) {
-        e.respondWith(fetch(e.request).catch(() => new Response('{"error":"offline"}',{headers:{'Content-Type':'application/json'}})));
-      } else {
-        e.respondWith(caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
-          if (res.ok) caches.open(CACHE).then(c => c.put(e.request, res.clone()));
-          return res;
-        })));
-      }
-    });
-  `;
-  const blob = new Blob([swCode], {type:'application/javascript'});
-  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
-}
-</script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
-<style>
-:root{
-  --bg:#000;--surface:rgba(255,255,255,.05);--surface2:rgba(255,255,255,.08);
-  --border:rgba(255,255,255,.08);--accent:#00ff88;--glow:rgba(0,255,136,.25);
-  --text:#fff;--muted:#888;--danger:#ff4444;--warn:#ffaa00;--archive:#a78bfa;
-  --shared:#00c8ff;--r:16px;--font:'Heebo',sans-serif;
-}
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;width:100%;font-family:var(--font);background:var(--bg);color:var(--text);overflow:hidden}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ארנק שוברים - Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&display=swap');
+        html, body { height: 100%; width: 100%; }
+        body { font-family: 'Heebo', sans-serif; background: #000; color: #fff; overflow: hidden; }
 
-/* AUTH */
-#authScreen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 0%,rgba(0,255,136,.08),#000 60%);z-index:1000}
-.auth-box{background:rgba(255,255,255,.04);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:28px;padding:44px 30px;max-width:370px;width:90%}
-.auth-logo{text-align:center;margin-bottom:32px}
-.auth-logo .icon{font-size:52px;display:block;margin-bottom:10px}
-.auth-logo h1{font-size:26px;font-weight:900;background:linear-gradient(135deg,var(--accent),#00ffff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.auth-logo p{font-size:13px;color:var(--muted);margin-top:5px}
-.auth-form{display:flex;flex-direction:column;gap:13px}
-.auth-form input{padding:13px 15px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:var(--font);font-size:15px;transition:border-color .2s,background .2s}
-.auth-form input:focus{outline:none;background:rgba(255,255,255,.08);border-color:rgba(0,255,136,.5)}
-.auth-form input::placeholder{color:var(--muted)}
-.auth-btn{padding:14px;background:var(--accent);color:#000;border:none;border-radius:12px;font-weight:900;cursor:pointer;font-size:15px;font-family:var(--font);transition:transform .15s}
-.auth-btn:active{transform:scale(.97)}
-.auth-toggle{text-align:center;font-size:13px;color:var(--muted)}
-.auth-toggle a{color:var(--accent);cursor:pointer;text-decoration:underline}
-.auth-err{color:var(--danger);font-size:12px;text-align:center;min-height:18px}
-#registerForm{display:none}
+        .sidebar { position: fixed; top: 0; left: 0; width: 250px; height: 100%; background: #0a0a0a; border-right: 1px solid rgba(255,255,255,0.1); overflow-y: auto; padding: 24px; display: none; z-index: 999; }
 
-/* APP SHELL */
-#appScreen{display:none;position:fixed;inset:0;flex-direction:column}
-#appScreen.on{display:flex}
-.tab-panel{display:flex;flex-direction:column;height:100%}
-.tab-panel.hidden{display:none}
+        .sidebar.active { display: flex; flex-direction: column; }
 
-/* HEADER */
-.header{padding:52px 20px 14px;background:linear-gradient(to bottom,rgba(0,255,136,.06),transparent);border-bottom:1px solid var(--border);flex-shrink:0}
-.header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
-.header-top h1{font-size:21px;font-weight:900;background:linear-gradient(135deg,var(--accent),#00ffff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.header-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:7px 15px;border-radius:8px;cursor:pointer;font-size:12px;font-family:var(--font)}
-.balance-row{display:flex;align-items:baseline;gap:6px}
-.balance-num{font-size:38px;font-weight:900;color:var(--accent)}
-.balance-sym{font-size:20px;color:var(--accent)}
-.balance-lbl{font-size:12px;color:var(--muted);margin-top:2px}
-.wallet-badge{font-size:11px;color:var(--shared);background:rgba(0,200,255,.1);border:1px solid rgba(0,200,255,.25);border-radius:8px;padding:2px 8px;display:inline-block;margin-top:4px}
+        .sidebar h3 { font-size: 18px; font-weight: 900; margin-bottom: 24px; background: linear-gradient(135deg, #00ff88 0%, #00ffff 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-/* SEARCH */
-.search-wrap{padding:12px 20px 0;flex-shrink:0}
-.search-input{width:100%;padding:11px 15px 11px 38px;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:var(--font);font-size:14px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:left 11px center;transition:border-color .2s}
-.search-input:focus{outline:none;border-color:rgba(0,255,136,.4)}
-.search-input::placeholder{color:var(--muted)}
+        .sidebar-item { padding: 12px 16px; margin-bottom: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; cursor: pointer; transition: all 0.3s; font-size: 13px; }
 
-/* FILTER CHIPS */
-.filter-bar{display:flex;gap:7px;padding:10px 20px;overflow-x:auto;flex-shrink:0;scrollbar-width:none}
-.filter-bar::-webkit-scrollbar{display:none}
-.chip{padding:6px 13px;background:var(--surface);border:1px solid var(--border);border-radius:20px;color:var(--muted);font-family:var(--font);font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .2s;font-weight:500}
-.chip.active{background:rgba(0,255,136,.14);border-color:rgba(0,255,136,.4);color:var(--accent)}
+        .sidebar-item:hover, .sidebar-item.active { background: rgba(0,255,136,0.2); border-color: #00ff88; }
 
-/* LIST */
-.content{flex:1;overflow-y:auto;padding:12px 20px 100px}
-.content::-webkit-scrollbar{width:4px}
-.content::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:4px}
+        .sidebar-spacer { flex: 1; }
 
-.voucher-card{background:var(--surface);backdrop-filter:blur(8px);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all .25s;display:flex;align-items:center;gap:13px;position:relative;overflow:hidden}
-.voucher-card::before{content:'';position:absolute;top:0;right:0;width:3px;height:100%;background:var(--accent);opacity:0;transition:opacity .2s}
-.voucher-card:hover{background:var(--surface2)}
-.voucher-card:hover::before{opacity:1}
-.voucher-card:active{transform:scale(.99)}
-.voucher-card.warn::before{background:var(--warn);opacity:1}
-.voucher-card.warn{border-color:rgba(255,170,0,.25)}
-.voucher-card.expired{border-color:rgba(255,68,68,.2);opacity:.55}
-.voucher-card.expired::before{background:var(--danger);opacity:1}
-.voucher-card.archived-card{border-color:rgba(167,139,250,.2);opacity:.7}
-.voucher-card.archived-card::before{background:var(--archive);opacity:1}
-.voucher-card.zeroed::before{background:var(--archive);opacity:1}
-.voucher-card.zeroed{border-color:rgba(167,139,250,.3)}
-/* shared wallet card gets cyan left border */
-.voucher-card.shared-card::after{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--shared)}
+        .sidebar-logout { background: rgba(255,68,68,0.2); color: #ff6666; border: 1px solid rgba(255,68,68,0.3); }
 
-.v-emoji{font-size:30px;flex-shrink:0}
-.v-body{flex:1;min-width:0}
-.v-name{font-weight:700;font-size:15px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.v-cat{font-size:12px;color:var(--muted)}
-.v-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
-.v-tag{background:rgba(0,255,136,.1);color:var(--accent);border:1px solid rgba(0,255,136,.25);border-radius:5px;padding:1px 6px;font-size:10px;font-weight:700}
-.v-right{text-align:left;flex-shrink:0}
-.v-bal{font-size:20px;font-weight:900;color:var(--accent)}
-.v-bal.zero{color:var(--archive)}
-.expiry-badge{font-size:11px;padding:3px 8px;border-radius:6px;display:inline-block;margin-top:4px;background:rgba(255,255,255,.07);color:var(--muted)}
-.expiry-badge.soon{background:rgba(255,170,0,.15);color:var(--warn)}
-.expiry-badge.expired{background:rgba(255,68,68,.15);color:var(--danger)}
-.expiry-badge.archive{background:rgba(167,139,250,.15);color:var(--archive)}
-.shared-dot{width:7px;height:7px;background:var(--shared);border-radius:50%;display:inline-block;margin-left:4px;vertical-align:middle}
-.super-badge{font-size:9px;padding:1px 5px;background:rgba(255,170,0,.15);color:var(--warn);border:1px solid rgba(255,170,0,.3);border-radius:4px;margin-right:4px;font-weight:700}
+        #authScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #000 0%, #0a0a0a 100%); z-index: 1000; }
 
-/* card action buttons */
-.card-actions{position:absolute;top:8px;left:8px;display:flex;gap:5px;opacity:0;transition:opacity .2s}
-.voucher-card:hover .card-actions{opacity:1}
-.card-btn{width:28px;height:28px;border-radius:6px;border:none;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center}
-.card-btn.del{background:rgba(255,68,68,.15);color:#ff6666}
-.card-btn.edit{background:rgba(0,255,136,.12);color:var(--accent)}
-.card-btn.arch{background:rgba(167,139,250,.15);color:var(--archive)}
+        .auth-box { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 48px 32px; max-width: 380px; width: 90%; }
 
-.dup-warn{background:rgba(255,170,0,.12);border:1px solid rgba(255,170,0,.35);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--warn);margin-bottom:14px;display:none}
-.dup-warn.show{display:block}
-.archive-hdr{padding:52px 20px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
-.archive-hdr h2{font-size:22px;font-weight:900;color:var(--archive)}
-.archive-hdr p{font-size:13px;color:var(--muted);margin-top:4px}
-.empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
-.empty-state .icon{font-size:52px;margin-bottom:14px;opacity:.6}
-.empty-state h3{font-size:16px;font-weight:700;margin-bottom:6px;color:var(--text)}
-.empty-state p{font-size:13px;line-height:1.6}
+        .auth-box h1 { font-size: 36px; font-weight: 900; background: linear-gradient(135deg, #00ff88 0%, #00ffff 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 40px; text-align: center; }
 
-/* BOTTOM NAV */
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:70px;background:rgba(0,0,0,.92);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;justify-content:space-around;align-items:center;padding-bottom:env(safe-area-inset-bottom,0)}
-.nav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:11px;cursor:pointer;padding:8px 12px;border-radius:12px;background:none;border:none;font-family:var(--font);transition:color .2s;position:relative}
-.nav-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8}
-.nav-btn.active{color:var(--accent)}
-.nav-btn.nav-archive.active{color:var(--archive)}
-.nav-btn.nav-settings.active{color:var(--shared)}
-.nav-notif{position:absolute;top:4px;left:8px;width:8px;height:8px;background:var(--danger);border-radius:50%;display:none}
-.nav-notif.show{display:block}
+        .auth-form { display: flex; flex-direction: column; gap: 16px; }
 
-/* FAB */
-.fab{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);width:56px;height:56px;background:var(--accent);border-radius:17px;border:none;color:#000;font-size:28px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 0 28px var(--glow),0 4px 18px rgba(0,0,0,.4);z-index:50;transition:transform .2s,box-shadow .2s}
-.fab:hover{transform:translateX(-50%) scale(1.06)}
-.fab:active{transform:translateX(-50%) scale(.94)}
+        .auth-form input { padding: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #fff; font-family: 'Heebo'; font-size: 15px; }
 
-/* MODALS */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);z-index:100;align-items:flex-end;justify-content:center}
-.modal-overlay.open{display:flex}
-.modal-sheet{width:100%;max-width:600px;background:#111;border:1px solid var(--border);border-bottom:none;border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease}
-@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
-.modal-handle{width:36px;height:4px;background:rgba(255,255,255,.18);border-radius:4px;margin:12px auto 0}
-.modal-inner{padding:18px 22px 36px}
-.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
-.modal-head h2{font-size:21px;font-weight:900}
-.modal-close{background:var(--surface);border:1px solid var(--border);color:var(--muted);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center}
+        .auth-form input:focus { outline: none; background: rgba(255,255,255,0.08); border-color: rgba(0,255,136,0.5); }
 
-.type-toggle{display:flex;background:var(--surface);border-radius:12px;padding:4px;margin-bottom:20px;gap:4px}
-.type-btn{flex:1;padding:10px;background:none;border:none;border-radius:8px;color:var(--muted);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;transition:all .2s}
-.type-btn.active{background:var(--accent);color:#000}
+        .auth-form button { padding: 14px; background: #00ff88; color: #000; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 15px; }
 
-.fg{margin-bottom:17px}
-.fg label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:7px;letter-spacing:.4px;text-transform:uppercase}
-.fg input,.fg select,.fg textarea{width:100%;padding:12px 13px;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:var(--font);font-size:14px;transition:border-color .2s}
-.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;background:rgba(255,255,255,.08);border-color:rgba(0,255,136,.5)}
-.fg input::placeholder,.fg textarea::placeholder{color:var(--muted)}
-.fg select option{background:#111}
-.fg textarea{resize:none;min-height:66px;line-height:1.5}
-.fg-row{display:grid;grid-template-columns:1fr 1fr;gap:11px}
-.brand-row{display:flex;gap:8px}
-.brand-row .fg{flex:1;margin-bottom:0}
-.brand-add-btn{height:44px;padding:0 14px;background:rgba(0,255,136,.12);border:1px solid rgba(0,255,136,.3);border-radius:12px;color:var(--accent);font-family:var(--font);font-size:18px;cursor:pointer;flex-shrink:0;transition:background .2s;align-self:flex-end}
-.brand-add-btn:hover{background:rgba(0,255,136,.2)}
+        .auth-form button:hover { background: #00dd77; }
 
-/* multi-select chips */
-.chip-group{display:flex;flex-wrap:wrap;gap:7px}
-.mchip{padding:7px 13px;background:var(--surface);border:1px solid var(--border);border-radius:20px;color:var(--muted);font-family:var(--font);font-size:12px;cursor:pointer;transition:all .2s;font-weight:500;white-space:nowrap}
-.mchip.sel{background:rgba(0,255,136,.15);border-color:rgba(0,255,136,.45);color:var(--accent)}
-.mchip.sel-warn{background:rgba(255,170,0,.12);border-color:rgba(255,170,0,.4);color:var(--warn)}
+        .auth-toggle { text-align: center; font-size: 13px; color: #999; margin-top: 8px; }
 
-/* progressive disclosure */
-.disc-section{margin-bottom:9px}
-.disc-btn{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 15px;cursor:pointer;font-size:13px;font-weight:700;color:var(--muted);transition:all .2s;width:100%;font-family:var(--font)}
-.disc-btn.open{border-radius:12px 12px 0 0;color:var(--text);border-color:rgba(0,255,136,.3)}
-.disc-chevron{transition:transform .2s}
-.disc-btn.open .disc-chevron{transform:rotate(180deg)}
-.disc-body{display:none;background:rgba(255,255,255,.02);border:1px solid rgba(0,255,136,.18);border-top:none;border-radius:0 0 12px 12px;padding:15px}
-.disc-body.open{display:block}
-.code-tabs{display:flex;gap:7px;margin-bottom:12px}
-.code-tab{padding:6px 13px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
-.code-tab.active{border-color:rgba(0,255,136,.4);color:var(--accent);background:rgba(0,255,136,.1)}
+        .auth-toggle a { color: #00ff88; cursor: pointer; }
 
-.tags-wrap{display:flex;flex-wrap:wrap;gap:6px;min-height:36px;padding:7px;background:var(--surface);border:1px solid var(--border);border-radius:12px;cursor:text}
-.tag-pill{background:rgba(0,255,136,.13);color:var(--accent);border:1px solid rgba(0,255,136,.28);border-radius:6px;padding:3px 8px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:4px}
-.tag-pill button{background:none;border:none;color:var(--accent);cursor:pointer;font-size:14px;line-height:1;padding:0}
-.tag-input{border:none;background:none;outline:none;color:var(--text);font-family:var(--font);font-size:13px;min-width:70px;flex:1}
+        #registerForm { display: none; }
 
-.form-actions{display:flex;gap:11px;margin-top:22px}
-.btn{flex:1;padding:13px;border:none;border-radius:12px;font-weight:900;cursor:pointer;font-size:14px;font-family:var(--font);transition:transform .15s}
-.btn:active{transform:scale(.97)}
-.btn-primary{background:var(--accent);color:#000}
-.btn-primary:hover{background:#00dd77}
-.btn-secondary{background:var(--surface);color:var(--text);border:1px solid var(--border)}
-.btn-shared{background:rgba(0,200,255,.14);color:var(--shared);border:1px solid rgba(0,200,255,.3)}
+        #appScreen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; flex-direction: column; }
 
-/* CENTER MINI MODAL */
-.center-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:300;align-items:center;justify-content:center}
-.center-modal.open{display:flex}
-.center-box{background:#1a1a1a;border:1px solid var(--border);border-radius:20px;padding:28px 24px;max-width:340px;width:90%;animation:slideUp .25s ease}
-.center-box h3{font-size:18px;font-weight:900;margin-bottom:6px}
-.center-box p{font-size:13px;color:var(--muted);margin-bottom:18px}
-.center-box input{width:100%;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:var(--font);font-size:14px;margin-bottom:14px}
-.center-box input:focus{outline:none;border-color:rgba(0,255,136,.5)}
-.center-actions{display:flex;gap:10px}
+        .header { padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; gap: 24px; background: rgba(0,0,0,0.5); }
 
-/* CHECKOUT */
-#checkoutScreen{display:none;position:fixed;inset:0;background:#000;z-index:200;flex-direction:column;align-items:center;overflow-y:auto}
-#checkoutScreen.on{display:flex}
-.co-header{width:100%;display:flex;align-items:center;padding:52px 22px 10px;flex-shrink:0}
-.co-back{background:var(--surface);border:1px solid var(--border);color:var(--text);width:40px;height:40px;border-radius:10px;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center}
-.co-title{flex:1;text-align:center;font-size:17px;font-weight:900;margin-right:40px}
-.co-body{width:100%;max-width:400px;padding:4px 22px 44px;flex:1}
-.co-brand{text-align:center;margin-bottom:22px}
-.co-emoji{font-size:60px;display:block;margin-bottom:9px}
-.co-name{font-size:26px;font-weight:900}
-.co-cat{font-size:13px;color:var(--muted);margin-top:3px}
-.co-accepted{font-size:12px;color:var(--warn);margin-top:6px;line-height:1.5}
-.barcode-card{background:#fff;border-radius:16px;padding:22px 18px 14px;text-align:center;margin-bottom:14px}
-#barcodeCanvas{max-width:100%;height:auto !important}
-.barcode-text{color:#000;font-family:monospace;font-size:14px;font-weight:700;margin-top:9px;letter-spacing:2px}
-.dyn-btn{width:100%;padding:15px;margin-bottom:14px;background:linear-gradient(135deg,rgba(0,255,136,.14),rgba(0,200,255,.1));border:1px solid rgba(0,255,136,.3);border-radius:14px;color:var(--accent);font-family:var(--font);font-size:15px;font-weight:900;cursor:pointer;transition:all .2s}
-.bal-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;text-align:center;margin-bottom:14px}
-.bal-lbl{font-size:11px;color:var(--muted);margin-bottom:5px}
-.bal-num{font-size:46px;font-weight:900;color:var(--accent);line-height:1}
-.bal-sub{font-size:12px;color:var(--muted);margin-top:5px}
-.redeem-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px}
-.redeem-card label{display:block;font-size:12px;color:var(--muted);margin-bottom:9px;font-weight:700}
-.redeem-input{width:100%;padding:13px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:18px;text-align:center;font-family:var(--font);font-weight:700;margin-bottom:11px;transition:border-color .2s}
-.redeem-input:focus{outline:none;border-color:rgba(0,255,136,.5)}
-.archive-btn-co{width:100%;padding:13px;margin-top:10px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);border-radius:12px;color:var(--archive);font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;transition:all .2s}
-.offline-warn{background:rgba(255,170,0,.12);border:1px solid rgba(255,170,0,.35);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--warn);margin-bottom:12px;display:none;text-align:center}
-.offline-warn.show{display:block}
+        .header-left { display: flex; align-items: center; gap: 16px; }
 
-/* SETTINGS SCREEN */
-#settingsScreen{display:none;position:absolute;inset:0;flex-direction:column;background:var(--bg);overflow-y:auto;padding-bottom:80px}
-#settingsScreen.on{display:flex}
-.settings-header{padding:52px 20px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
-.settings-header h2{font-size:23px;font-weight:900;color:var(--shared)}
-.settings-body{padding:20px}
-.settings-section{margin-bottom:28px}
-.settings-section h3{font-size:14px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px}
-.wallet-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:10px}
-.wallet-name{font-size:17px;font-weight:900;margin-bottom:4px}
-.wallet-meta{font-size:12px;color:var(--muted)}
-.wallet-card.active-wallet{border-color:rgba(0,200,255,.35);background:rgba(0,200,255,.06)}
-.wallet-card.active-wallet .wallet-name{color:var(--shared)}
-.member-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
-.member-row:last-child{border-bottom:none}
-.member-avatar{width:36px;height:36px;border-radius:10px;background:rgba(0,200,255,.15);color:var(--shared);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-.member-info{flex:1;min-width:0}
-.member-email{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.member-status{font-size:11px;color:var(--muted);margin-top:2px}
-.member-status.owner{color:var(--accent)}
-.member-status.pending{color:var(--warn)}
-.member-remove{background:rgba(255,68,68,.12);border:none;color:#ff6666;padding:5px 10px;border-radius:7px;cursor:pointer;font-size:12px;font-family:var(--font)}
-.invite-row{display:flex;gap:8px;margin-top:14px}
-.invite-row input{flex:1;padding:11px 13px;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:var(--font);font-size:14px}
-.invite-row input:focus{outline:none;border-color:rgba(0,200,255,.5)}
-.invite-btn{padding:11px 18px;background:rgba(0,200,255,.14);border:1px solid rgba(0,200,255,.3);border-radius:12px;color:var(--shared);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
-/* invitation banner */
-.invite-banner{background:rgba(0,200,255,.08);border:1px solid rgba(0,200,255,.25);border-radius:14px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;gap:12px}
-.invite-banner .inv-icon{font-size:24px;flex-shrink:0}
-.invite-banner .inv-body{flex:1;min-width:0}
-.invite-banner .inv-body p{font-size:13px;color:var(--muted);margin-top:2px}
-.invite-banner .inv-actions{display:flex;gap:7px;margin-top:10px}
-.inv-accept{padding:7px 14px;background:rgba(0,255,136,.15);border:1px solid rgba(0,255,136,.3);border-radius:8px;color:var(--accent);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer}
-.inv-decline{padding:7px 14px;background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.2);border-radius:8px;color:#ff6666;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer}
+        .menu-btn { background: rgba(255,255,255,0.1); border: none; color: #fff; padding: 10px 14px; border-radius: 8px; cursor: pointer; font-size: 18px; }
 
-/* STATS */
-#statsScreen{display:none;position:absolute;inset:0;flex-direction:column;background:var(--bg);overflow-y:auto;padding-bottom:80px}
-#statsScreen.on{display:flex}
-.stats-header{padding:52px 20px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
-.stats-header h2{font-size:23px;font-weight:900}
-.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;padding:15px 20px}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:17px}
-.stat-val{font-size:28px;font-weight:900;color:var(--accent)}
-.stat-lbl{font-size:12px;color:var(--muted);margin-top:3px}
-.stat-card.wide{grid-column:1/-1}
-.cat-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:13px}
-.cat-bar{height:4px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden;margin-bottom:13px}
-.cat-fill{height:100%;background:var(--accent);border-radius:4px}
+        .header h1 { font-size: 24px; font-weight: 900; background: linear-gradient(135deg, #00ff88 0%, #00ffff 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-/* brand picker list */
-.bp-item{padding:12px 18px;font-size:14px;font-weight:500;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s;display:flex;align-items:center;gap:10px}
-.bp-item:hover,.bp-item:active{background:rgba(255,255,255,.06)}
-.bp-item.bp-super{color:var(--warn)}
-.bp-item .bp-emoji{font-size:20px;width:28px;text-align:center;flex-shrink:0}
-.bp-section{padding:6px 18px;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;background:rgba(255,255,255,.02)}
-/* profile fields */
-.profile-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
-.profile-row:last-child{border-bottom:none}
-.profile-label{font-size:11px;font-weight:700;color:var(--muted);width:70px;flex-shrink:0;text-transform:uppercase;letter-spacing:.3px}
-.profile-val{flex:1;font-size:14px}
-.profile-edit-btn{background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.25);color:var(--accent);padding:5px 11px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)}
-/* admin section cards */
-.admin-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px}
-.admin-card h3{font-size:14px;font-weight:900;margin-bottom:12px;color:var(--shared)}
-.admin-stat-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px}
-.admin-stat-row:last-child{border-bottom:none}
-.admin-stat-val{font-weight:900;color:var(--accent)}
-/* loading / saving states */
-.btn:disabled{opacity:.5;cursor:not-allowed;transform:none !important}
-.btn-loading{position:relative;color:transparent !important}
-.btn-loading::after{content:'';position:absolute;width:16px;height:16px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);animation:spin .7s linear infinite;color:#000}
-@keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
-.skeleton{background:linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.05) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:var(--r);height:72px;margin-bottom:10px}
-@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-/* offline banner */
-.offline-banner{background:rgba(255,170,0,.12);border-bottom:1px solid rgba(255,170,0,.3);padding:8px 20px;font-size:12px;font-weight:700;color:var(--warn);text-align:center;display:none;flex-shrink:0}
-.offline-banner.show{display:block}
-/* input focus ring improvement */
-.fg input:focus,.fg select:focus,.fg textarea:focus{box-shadow:0 0 0 3px rgba(0,255,136,.12)}
-/* tag pill overflow protection */
-.v-tag{max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(0,255,136,.14);backdrop-filter:blur(10px);border:1px solid rgba(0,255,136,.3);color:var(--accent);padding:11px 18px;border-radius:12px;font-size:13px;font-weight:700;opacity:0;pointer-events:none;transition:all .3s;z-index:999;white-space:nowrap;max-width:90vw;text-align:center}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.toast.err{background:rgba(255,68,68,.14);border-color:rgba(255,68,68,.3);color:var(--danger)}
-.dyn-dot{width:7px;height:7px;background:#00c8ff;border-radius:50%;display:inline-block;margin-right:4px}
-</style>
+        .header-right { display: flex; gap: 12px; align-items: center; }
+
+        .admin-badge { background: rgba(255,170,0,0.2); color: #ffaa00; padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+
+        .header-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 12px; }
+
+        .header-btn:hover { background: rgba(255,255,255,0.15); }
+
+        .content { flex: 1; overflow-y: auto; padding: 24px; margin-left: 0; transition: margin-left 0.3s; }
+
+        .content.sidebar-open { margin-left: 250px; }
+
+        .tabs { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+
+        .tab { padding: 10px 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; cursor: pointer; font-size: 13px; transition: all 0.3s; }
+
+        .tab:hover, .tab.active { background: rgba(0,255,136,0.2); border-color: #00ff88; }
+
+        .toolbar { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+
+        .search-box { flex: 1; min-width: 200px; }
+
+        .search-box input { width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #fff; font-family: 'Heebo'; font-size: 14px; }
+
+        .search-box input:focus { outline: none; background: rgba(255,255,255,0.08); border-color: rgba(0,255,136,0.5); }
+
+        .btn { padding: 10px 16px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 12px; font-family: 'Heebo'; transition: all 0.3s; }
+
+        .btn-primary { background: #00ff88; color: #000; }
+
+        .btn-primary:hover { background: #00dd77; }
+
+        .btn-secondary { background: rgba(255,255,255,0.1); color: #fff; }
+
+        .btn-secondary:hover { background: rgba(255,255,255,0.15); }
+
+        .btn-danger { background: rgba(255,68,68,0.2); color: #ff6666; }
+
+        .btn-danger:hover { background: rgba(255,68,68,0.3); }
+
+        .vouchers-list { display: grid; gap: 12px; }
+
+        .voucher-item { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 16px; display: flex; align-items: center; gap: 16px; position: relative; transition: all 0.3s; }
+
+        .voucher-item:hover { background: rgba(255,255,255,0.08); }
+
+        .voucher-checkbox { width: 20px; height: 20px; cursor: pointer; }
+
+        .voucher-info { flex: 1; text-align: right; }
+
+        .voucher-name { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+
+        .voucher-category { font-size: 12px; color: #888; }
+
+        .voucher-balance { font-weight: 900; font-size: 18px; color: #00ff88; margin-bottom: 8px; }
+
+        .voucher-expiry { font-size: 12px; padding: 4px 8px; background: rgba(255,255,255,0.1); border-radius: 4px; display: inline-block; }
+
+        .voucher-expiry.soon { background: rgba(255,170,0,0.2); color: #ffaa00; }
+
+        .voucher-expiry.expired { background: rgba(255,68,68,0.2); color: #ff4444; }
+
+        .voucher-actions { display: flex; gap: 8px; }
+
+        .icon-btn { background: rgba(255,255,255,0.1); border: none; color: #fff; width: 32px; height: 32px; border-radius: 6px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+
+        .icon-btn:hover { background: rgba(255,255,255,0.15); }
+
+        .icon-btn.danger { background: rgba(255,68,68,0.2); color: #ff6666; }
+
+        .icon-btn.danger:hover { background: rgba(255,68,68,0.3); }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+
+        .stat-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; text-align: center; }
+
+        .stat-value { font-size: 32px; font-weight: 900; color: #00ff88; margin-bottom: 8px; }
+
+        .stat-label { font-size: 12px; color: #888; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: flex-end; justify-content: center; }
+
+        .modal.active { display: flex; }
+
+        .modal-content { width: 100%; max-width: 600px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-bottom: none; border-radius: 24px 24px 0 0; padding: 32px 24px 24px; max-height: 85vh; overflow-y: auto; }
+
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+
+        .modal-header h2 { font-size: 24px; font-weight: 900; }
+
+        .modal-close { background: none; border: none; color: #fff; font-size: 28px; cursor: pointer; }
+
+        .form-group { margin-bottom: 20px; }
+
+        .form-group label { display: block; font-size: 12px; font-weight: 700; color: #888; margin-bottom: 8px; }
+
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #fff; font-family: 'Heebo'; font-size: 14px; }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; background: rgba(255,255,255,0.08); border-color: rgba(0,255,136,0.5); }
+
+        .form-actions { display: flex; gap: 12px; margin-top: 32px; }
+
+        .empty-state { text-align: center; padding: 80px 24px; color: #666; }
+
+        .empty-state-icon { font-size: 64px; margin-bottom: 16px; }
+
+        .badge { display: inline-block; padding: 4px 12px; background: rgba(0,255,136,0.2); color: #00ff88; border-radius: 6px; font-size: 11px; font-weight: 700; }
+
+        .badge.warning { background: rgba(255,170,0,0.2); color: #ffaa00; }
+
+        .badge.danger { background: rgba(255,68,68,0.2); color: #ff6666; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
+    </style>
 </head>
 <body>
-
-<!-- AUTH -->
-<div id="authScreen">
-  <div class="auth-box">
-    <div class="auth-logo"><span class="icon">🎟️</span><h1>ארנק שוברים</h1><p>נהל את כל השוברים שלך במקום אחד</p></div>
-    <div class="auth-form" id="loginForm">
-      <input type="email" id="loginEmail" placeholder="אימייל" autocomplete="email">
-      <input type="password" id="loginPassword" placeholder="סיסמה" autocomplete="current-password">
-      <div class="auth-err" id="loginErr"></div>
-      <button class="auth-btn" onclick="A.login()">התחבר</button>
-      <div class="auth-toggle">אין חשבון? <a onclick="A.switchForm('reg')">הירשם בחינם</a></div>
-    </div>
-    <div class="auth-form" id="registerForm">
-      <input type="email" id="regEmail" placeholder="אימייל" autocomplete="email">
-      <input type="password" id="regPass" placeholder="סיסמה" autocomplete="new-password">
-      <input type="password" id="regPass2" placeholder="אימות סיסמה" autocomplete="new-password">
-      <div class="auth-err" id="regErr"></div>
-      <button class="auth-btn" onclick="A.register()">הירשם</button>
-      <div class="auth-toggle">יש חשבון? <a onclick="A.switchForm('login')">התחבר</a></div>
-    </div>
-  </div>
-</div>
-
-<!-- APP -->
-<div id="appScreen">
-
-  <!-- HOME TAB -->
-  <div id="homeTab" class="tab-panel">
-    <div class="offline-banner" id="offlineBanner">⚡ מצב לא מקוון — מציג נתונים שמורים. לא ניתן לעדכן שוברים משותפים.</div>
-    <div class="header">
-      <div class="header-top">
-        <h1>🎟️ ארנק שוברים</h1>
-        <div id="headerUser" style="font-size:12px;color:var(--muted);text-align:left;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
-      </div>
-      <div class="balance-row"><span class="balance-sym">₪</span><span class="balance-num" id="totalBalance">0</span></div>
-      <div class="balance-lbl">סך יתרה פנויה</div>
-      <div id="walletBadge" class="wallet-badge" style="display:none"></div>
-    </div>
-    <div class="search-wrap">
-      <input type="search" class="search-input" id="searchInput" placeholder="חפש לפי שם, קוד, קטגוריה, חנות..." oninput="A.render()">
-    </div>
-    <div class="filter-bar">
-      <button class="chip active" data-f="הכל" onclick="A.setFilter('הכל')">הכל</button>
-      <button class="chip" data-f="פג תוקף קרוב" onclick="A.setFilter('פג תוקף קרוב')">⚠️ פג תוקף קרוב</button>
-      <button class="chip" data-f="משותף" onclick="A.setFilter('משותף')">👥 משותף</button>
-      <button class="chip" data-f="אופנה" onclick="A.setFilter('אופנה')">👗 אופנה</button>
-      <button class="chip" data-f="מסעדות" onclick="A.setFilter('מסעדות')">🍽️ מסעדות</button>
-      <button class="chip" data-f="קניות" onclick="A.setFilter('קניות')">🛍️ קניות</button>
-      <button class="chip" data-f="פנאי" onclick="A.setFilter('פנאי')">🎯 פנאי</button>
-      <button class="chip" data-f="ספורט" onclick="A.setFilter('ספורט')">💪 ספורט</button>
-      <button class="chip" data-f="יופי" onclick="A.setFilter('יופי')">💄 יופי</button>
-    </div>
-    <div class="content" id="vouchersList"></div>
-  </div>
-
-  <!-- ARCHIVE TAB -->
-  <div id="archiveTab" class="tab-panel hidden">
-    <div class="archive-hdr"><h2>🗄️ ארכיון</h2><p>שוברים שנוצלו במלואם</p></div>
-    <div class="content" id="archiveList"></div>
-  </div>
-
-  <!-- STATS TAB -->
-  <div id="statsScreen">
-    <div class="stats-header"><h2>📊 סטטיסטיקות</h2></div>
-    <div id="statsContent"></div>
-  </div>
-
-  <!-- SETTINGS TAB -->
-  <div id="settingsScreen">
-    <div class="settings-header"><h2>⚙️ פרופיל והגדרות</h2></div>
-    <div class="settings-body" id="settingsBody">טוען...</div>
-  </div>
-
-  <!-- NAV + FAB -->
-  <nav class="bottom-nav">
-    <button class="nav-btn active" id="navHome" onclick="A.showTab('home')">
-      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>בית
-    </button>
-    <button class="nav-btn nav-archive" id="navArchive" onclick="A.showTab('archive')">
-      <svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>ארכיון
-    </button>
-    <button class="nav-btn" id="navStats" onclick="A.showTab('stats')">
-      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>פעילות
-    </button>
-    <button class="nav-btn nav-settings" id="navSettings" onclick="A.showTab('settings')">
-      <div class="nav-notif" id="inviteNotif"></div>
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>ארנק
-    </button>
-  </nav>
-  <button class="fab" id="mainFab" onclick="A.openAdd()">+</button>
-</div>
-
-<!-- ADD/EDIT MODAL -->
-<div class="modal-overlay" id="addModal">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-inner">
-      <div class="modal-head">
-        <h2 id="modalTitle">➕ הוסף שובר</h2>
-        <button class="modal-close" onclick="A.closeAdd()">✕</button>
-      </div>
-      <div class="dup-warn" id="dupWarn">⚠️ שובר עם קוד זה כבר קיים בארנק שלך!</div>
-      <div class="type-toggle">
-        <button class="type-btn active" id="typeV" onclick="A.setType('voucher')">🎟️ שובר כספי</button>
-        <button class="type-btn" id="typeC" onclick="A.setType('coupon')">🏷️ קופון הנחה</button>
-      </div>
-
-      <!-- BRAND -->
-      <div class="fg" style="margin-bottom:17px">
-        <label>חנות / רשת *</label>
-        <div class="brand-row">
-          <div class="fg" style="margin-bottom:0;position:relative">
-            <input type="text" id="brandInput" placeholder="הקלד או בחר מהרשימה..." autocomplete="off"
-              oninput="A.onBrandInput()" onclick="A.openBrandPicker()"
-              style="cursor:pointer;padding-left:32px">
-            <button onclick="A.openBrandPicker()" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px;z-index:1">▾</button>
-          </div>
-          <button class="brand-add-btn" onclick="A.openBrandModal()" title="הוסף חנות חדשה">+</button>
-        </div>
-      </div>
-
-      <!-- SUPER-BRAND auto-notice -->
-      <div id="superBrandSection" style="display:none;margin-bottom:17px">
-        <div style="background:rgba(255,170,0,.06);border:1px solid rgba(255,170,0,.2);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px">
-          <span style="font-size:22px">⭐</span>
-          <div>
-            <div style="font-size:12px;font-weight:900;color:var(--warn)">שובר-על</div>
-            <div id="superBrandNotice" style="font-size:11px;color:var(--muted);margin-top:2px">תקף אוטומטית בכל החנויות המשויכות</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- CATEGORIES multi-select -->
-      <div class="fg">
-        <label>קטגוריות <span style="font-weight:400;color:var(--muted);text-transform:none">(בחירה מרובה)</span></label>
-        <div class="chip-group" id="catChips">
-          <div class="mchip" data-cat="אופנה" onclick="A.toggleCat('אופנה')">👗 אופנה</div>
-          <div class="mchip" data-cat="מסעדות" onclick="A.toggleCat('מסעדות')">🍽️ מסעדות</div>
-          <div class="mchip" data-cat="קניות" onclick="A.toggleCat('קניות')">🛍️ קניות</div>
-          <div class="mchip" data-cat="פנאי" onclick="A.toggleCat('פנאי')">🎯 פנאי</div>
-          <div class="mchip" data-cat="ספורט" onclick="A.toggleCat('ספורט')">💪 ספורט</div>
-          <div class="mchip" data-cat="יופי" onclick="A.toggleCat('יופי')">💄 יופי</div>
-          <div class="mchip" data-cat="אחר" onclick="A.toggleCat('אחר')">📦 אחר</div>
-        </div>
-      </div>
-
-      <div class="fg-row">
-        <div class="fg"><label id="amtLabel">יתרה (₪) *</label><input type="number" id="amountInput" placeholder="500" min="0" inputmode="decimal"></div>
-        <div class="fg"><label>תאריך תפוגה</label><input type="date" id="dateInput"></div>
-      </div>
-
-      <!-- WALLET SELECTOR removed — one wallet per user -->
-
-      <!-- Progressive Disclosure: Code -->
-      <div class="disc-section" id="secCode">
-        <button class="disc-btn" onclick="A.toggleDisc('secCode')">
-          <span>🔑 פרטי מימוש (קוד / קישור)</span><span class="disc-chevron">▾</span>
-        </button>
-        <div class="disc-body">
-          <div class="code-tabs">
-            <button class="code-tab active" id="ctStatic" onclick="A.setCodeType('static')">קוד סטטי</button>
-            <button class="code-tab" id="ctDynamic" onclick="A.setCodeType('dynamic')">קישור דינמי (OTP)</button>
-          </div>
-          <div id="staticField" class="fg"><label>קוד אלפא-נומרי</label><input type="text" id="codeInput" placeholder="ABC123456" oninput="A.checkDup()" autocapitalize="characters" autocorrect="off" spellcheck="false" inputmode="text"></div>
-          <div id="dynamicField" class="fg" style="display:none"><label>קישור לשובר דינמי</label><input type="url" id="dynamicUrl" placeholder="https://..."></div>
-          <div class="fg" style="margin-top:4px">
-            <label>CVV / קוד אבטחה <span style="font-weight:400;color:var(--muted);text-transform:none">(אופציונלי)</span></label>
-            <input type="text" id="cvvInput" placeholder="3-4 ספרות" maxlength="4" inputmode="numeric" autocomplete="off" style="letter-spacing:3px;font-family:monospace;font-size:16px">
-          </div>
-        </div>
-      </div>
-
-      <!-- Progressive Disclosure: Extras -->
-      <div class="disc-section" id="secExtras" style="margin-top:9px">
-        <button class="disc-btn" onclick="A.toggleDisc('secExtras')">
-          <span>🏷️ תגיות והערות</span><span class="disc-chevron">▾</span>
-        </button>
-        <div class="disc-body">
-          <div class="fg">
-            <label>תגיות (לחץ Enter)</label>
-            <div class="tags-wrap" id="tagsWrap" onclick="document.getElementById('tagIn').focus()">
-              <input class="tag-input" id="tagIn" placeholder="מתנה לחג..." onkeydown="A.handleTag(event)">
+    <!-- AUTH SCREEN -->
+    <div id="authScreen">
+        <div class="auth-box">
+            <h1>ארנק שוברים PRO</h1>
+            
+            <div class="auth-form" id="loginForm">
+                <input type="email" id="loginEmail" placeholder="אימייל">
+                <input type="password" id="loginPassword" placeholder="סיסמה">
+                <button onclick="app.login()">התחבר</button>
+                <div class="auth-toggle">אין חשבון? <a onclick="app.switchForm('register')">הירשם</a></div>
             </div>
-          </div>
-          <div class="fg"><label>הערות</label><textarea id="notesInput" placeholder="מגבלות שימוש, מקור..."></textarea></div>
-        </div>
-      </div>
 
-      <div class="form-actions">
-        <button class="btn btn-secondary" onclick="A.closeAdd()">ביטול</button>
-        <button class="btn btn-primary" id="saveBtn" onclick="A.saveVoucher()">הוסף שובר</button>
-      </div>
+            <div class="auth-form" id="registerForm">
+                <input type="email" id="regEmail" placeholder="אימייל">
+                <input type="password" id="regPass" placeholder="סיסמה">
+                <input type="password" id="regPass2" placeholder="אימות סיסמה">
+                <button onclick="app.register()">הירשם</button>
+                <div class="auth-toggle">יש לך חשבון? <a onclick="app.switchForm('login')">התחבר</a></div>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
 
-<!-- BRAND PICKER MODAL -->
-<div class="center-modal" id="brandPickerModal">
-  <div class="center-box" style="max-width:420px;padding:0;overflow:hidden;max-height:80vh;display:flex;flex-direction:column">
-    <div style="padding:16px 18px 12px;border-bottom:1px solid var(--border);flex-shrink:0">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <h3 style="font-size:17px;font-weight:900">בחר חנות</h3>
-        <button onclick="A.closeBrandPicker()" style="background:var(--surface);border:1px solid var(--border);color:var(--muted);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px">✕</button>
-      </div>
-      <input type="search" id="brandPickerSearch" placeholder="חיפוש..." autocomplete="off"
-        style="width:100%;padding:10px 12px;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--font);font-size:14px">
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebar">
+        <h3>תפריט</h3>
+        <div class="sidebar-item active" onclick="app.switchTab('dashboard')">📊 דשבורד</div>
+        <div class="sidebar-item" onclick="app.switchTab('my-vouchers')">🏪 שוברים שלי</div>
+        <div class="sidebar-item" onclick="app.switchTab('statistics')">📈 סטטיסטיקה</div>
+        <div id="adminSection" style="display: none;">
+            <hr style="margin: 16px 0; border: none; border-top: 1px solid rgba(255,255,255,0.1);">
+            <div style="font-size: 11px; color: #888; margin-bottom: 12px; text-transform: uppercase;">ניהול</div>
+            <div class="sidebar-item" onclick="app.switchTab('admin-dashboard')">👨‍💼 ניהול מרכזי</div>
+            <div class="sidebar-item" onclick="app.switchTab('all-vouchers')">🔑 כל השוברים</div>
+            <div class="sidebar-item" onclick="app.switchTab('users')">👥 משתמשים</div>
+            <div class="sidebar-item" onclick="app.switchTab('import')">📥 יבוא</div>
+        </div>
+        <div class="sidebar-spacer"></div>
+        <div class="sidebar-item sidebar-logout" onclick="app.logout()">התנתק</div>
     </div>
-    <div id="brandPickerList" style="overflow-y:auto;flex:1;padding:8px 0"></div>
-  </div>
-</div>
 
-<!-- ADMIN PANEL (full screen overlay) -->
-<div id="adminPanel" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:250;flex-direction:column;overflow-y:auto">
-  <div style="padding:52px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-shrink:0;background:linear-gradient(to bottom,rgba(0,200,255,.06),transparent)">
-    <button onclick="A.closeAdmin()" style="background:var(--surface);border:1px solid var(--border);color:var(--text);width:38px;height:38px;border-radius:10px;cursor:pointer;font-size:19px;display:flex;align-items:center;justify-content:center;flex-shrink:0">←</button>
-    <div>
-      <h2 style="font-size:21px;font-weight:900;color:var(--shared)">🛡️ פאנל מנהל</h2>
-      <p style="font-size:12px;color:var(--muted);margin-top:2px">גישה מלאה לניהול הארנק</p>
+    <!-- APP SCREEN -->
+    <div id="appScreen">
+        <div class="header">
+            <div class="header-left">
+                <button class="menu-btn" onclick="app.toggleSidebar()">☰</button>
+                <h1 id="pageTitle">דשבורד</h1>
+            </div>
+            <div class="header-right">
+                <div id="adminBadge" class="admin-badge" style="display: none;">🔑 מנהל מערכת</div>
+                <button class="header-btn" onclick="app.logout()">התנתק</button>
+            </div>
+        </div>
+
+        <div class="content" id="content">
+            <!-- DASHBOARD TAB -->
+            <div id="tab-dashboard" class="tab-content">
+                <div class="stats-grid" id="dashboardStats"></div>
+                <h2 style="margin-bottom: 16px;">שוברים קרובים לפקיעה</h2>
+                <div class="vouchers-list" id="expiringVouchers"></div>
+            </div>
+
+            <!-- MY VOUCHERS TAB -->
+            <div id="tab-my-vouchers" class="tab-content" style="display: none;">
+                <div class="toolbar">
+                    <div class="search-box">
+                        <input type="text" placeholder="חפש שובר..." onkeyup="app.filter()">
+                    </div>
+                    <button class="btn btn-primary" onclick="app.openAddModal()">+ הוסף שובר</button>
+                </div>
+                <div class="vouchers-list" id="myVouchersList"></div>
+            </div>
+
+            <!-- STATISTICS TAB -->
+            <div id="tab-statistics" class="tab-content" style="display: none;">
+                <div class="stats-grid" id="statsGrid"></div>
+                <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 24px; margin-top: 24px;">
+                    <h3 style="margin-bottom: 16px;">ניתוח שוברים</h3>
+                    <div id="statsAnalysis"></div>
+                </div>
+            </div>
+
+            <!-- ADMIN DASHBOARD -->
+            <div id="tab-admin-dashboard" class="tab-content" style="display: none;">
+                <div class="stats-grid" id="adminStats"></div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 24px;">
+                    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px;">
+                        <h4 style="margin-bottom: 16px;">פעולות מהירות</h4>
+                        <button class="btn btn-primary" style="width: 100%; margin-bottom: 8px;" onclick="app.openAddModal()">הוסף שובר</button>
+                        <button class="btn btn-secondary" style="width: 100%; margin-bottom: 8px;" onclick="app.switchTab('import')">יבוא בקבוצה</button>
+                        <button class="btn btn-secondary" style="width: 100%;" onclick="app.exportCSV()">ייצוא CSV</button>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px;">
+                        <h4 style="margin-bottom: 16px;">התראות</h4>
+                        <div id="adminAlerts"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ALL VOUCHERS -->
+            <div id="tab-all-vouchers" class="tab-content" style="display: none;">
+                <div class="toolbar">
+                    <div class="search-box">
+                        <input type="text" placeholder="חפש שובר..." onkeyup="app.filter()">
+                    </div>
+                    <select onchange="app.filterByStatus(this.value)" style="padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-family: 'Heebo';">
+                        <option value="">הכל</option>
+                        <option value="active">פעיל</option>
+                        <option value="expiring">קרוב לפוג</option>
+                        <option value="expired">פג תוקף</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="app.openAddModal()">+ הוסף שובר</button>
+                </div>
+                <div class="vouchers-list" id="allVouchersList"></div>
+            </div>
+
+            <!-- USERS TAB -->
+            <div id="tab-users" class="tab-content" style="display: none;">
+                <div id="usersList"></div>
+            </div>
+
+            <!-- IMPORT TAB -->
+            <div id="tab-import" class="tab-content" style="display: none;">
+                <div style="max-width: 600px;">
+                    <h3 style="margin-bottom: 16px;">יבוא שוברים מ-CSV</h3>
+                    <textarea id="csvInput" placeholder="עתק את הנתונים כאן:&#10;שם,קטגוריה,סכום,תאריך" style="width: 100%; height: 200px; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #fff; font-family: monospace; font-size: 12px; margin-bottom: 16px;"></textarea>
+                    <button class="btn btn-primary" onclick="app.importCSV()">📥 יבא נתונים</button>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-  <div id="adminBody" style="padding:16px 20px 100px"></div>
-</div>
 
-<!-- ADD BRAND MODAL -->
-<div class="center-modal" id="brandModal">
-  <div class="center-box">
-    <h3>➕ הוסף חנות חדשה</h3>
-    <p>החנות תישמר ברשימת הבחירה שלך</p>
-    <input type="text" id="newBrandInput" placeholder="שם החנות...">
-    <div class="center-actions">
-      <button class="btn btn-secondary" style="flex:1" onclick="A.closeBrandModal()">ביטול</button>
-      <button class="btn btn-primary" style="flex:1" onclick="A.saveBrand()">הוסף</button>
+    <!-- ADD/EDIT MODAL -->
+    <div class="modal" id="addModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">הוסף שובר</h2>
+                <button class="modal-close" onclick="app.closeAddModal()">×</button>
+            </div>
+            <div class="form-group">
+                <label>שם החנות *</label>
+                <input type="text" id="brandInput" placeholder="פוקס, קסטרו וכו'">
+            </div>
+            <div class="form-group">
+                <label>קטגוריה</label>
+                <select id="categoryInput">
+                    <option value="">בחר</option>
+                    <option value="אופנה">אופנה</option>
+                    <option value="מסעדות">מסעדות</option>
+                    <option value="קניות">קניות</option>
+                    <option value="פנאי">פנאי</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>סכום (₪) *</label>
+                <input type="number" id="amountInput" placeholder="500" min="1">
+            </div>
+            <div class="form-group">
+                <label>תאריך תפוגה *</label>
+                <input type="date" id="dateInput">
+            </div>
+            <div class="form-group">
+                <label>קוד (אופציונלי)</label>
+                <input type="text" id="codeInput">
+            </div>
+            <div id="userSelect" style="display: none;" class="form-group">
+                <label>משתמש</label>
+                <select id="userSelectDropdown"></select>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-secondary" onclick="app.closeAddModal()">ביטול</button>
+                <button class="btn btn-primary" onclick="app.addVoucher()">שמור</button>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
-
-<!-- CHECKOUT -->
-<div id="checkoutScreen">
-  <div class="co-header">
-    <button class="co-back" onclick="A.closeCheckout()">←</button>
-    <div class="co-title">סריקה בקופה</div>
-  </div>
-  <div class="co-body">
-    <div class="co-brand">
-      <span class="co-emoji" id="coEmoji">🏪</span>
-      <div class="co-name" id="coName"></div>
-      <div class="co-cat" id="coCat"></div>
-      <div class="co-accepted" id="coAccepted" style="display:none"></div>
-    </div>
-    <div class="offline-warn" id="offlineWarn">⚡ אין חיבור לאינטרנט — לא ניתן לעדכן שובר משותף</div>
-    <div id="staticZone">
-      <div class="barcode-card"><canvas id="barcodeCanvas"></canvas><div id="qrZone"></div><div class="barcode-text" id="coCode"></div></div>
-    </div>
-    <div id="dynamicZone" style="display:none">
-      <button class="dyn-btn" onclick="A.openDynamic()">📲 פתח ברקוד דינמי (חי)</button>
-    </div>
-    <div id="cvvZone" style="display:none;margin-bottom:14px">
-      <div style="background:rgba(255,170,0,.08);border:1px solid rgba(255,170,0,.25);border-radius:14px;padding:16px;text-align:center">
-        <div style="font-size:11px;color:var(--warn);font-weight:700;margin-bottom:8px;letter-spacing:.4px;text-transform:uppercase">🔒 CVV</div>
-        <div id="coCvv" style="font-size:36px;font-weight:900;letter-spacing:10px;font-family:monospace"></div>
-      </div>
-    </div>
-    <div class="bal-card">
-      <div class="bal-lbl">יתרה נוכחית</div>
-      <div class="bal-num" id="coBal">₪0</div>
-      <div class="bal-sub" id="coSub"></div>
-    </div>
-    <div class="redeem-card">
-      <label>עדכן לאחר תשלום — כמה הוצא?</label>
-      <input class="redeem-input" type="number" id="redeemInput" placeholder="₪ הסכום שהוצא" min="1">
-      <button class="btn btn-primary" style="width:100%" onclick="A.redeem()">✅ עדכן יתרה</button>
-      <button class="archive-btn-co" id="archiveBtnCo" style="display:none" onclick="A.archiveCurrent()">🗄️ העבר לארכיון</button>
-    </div>
-  </div>
-</div>
-
-<!-- SUPER-BRAND EDIT MODAL -->
-<div class="center-modal" id="sbEditModal">
-  <div class="center-box" style="max-width:420px">
-    <h3 id="sbEditTitle">✏️ עריכת שובר-על</h3>
-    <p style="margin-bottom:14px">שם השובר-על</p>
-    <input type="text" id="sbEditName" placeholder="BuyMe, תו הזהב...">
-    <p style="font-size:11px;color:var(--muted);margin-bottom:7px;text-transform:uppercase;letter-spacing:.4px;font-weight:700">רשימת חנויות — שורה לכל חנות (או פסיק)</p>
-    <textarea id="sbEditStores" style="width:100%;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:var(--font);font-size:13px;resize:vertical;min-height:130px;line-height:1.7;margin-bottom:14px" placeholder="פוקס&#10;קסטרו&#10;זארה"></textarea>
-    <div class="center-actions">
-      <button class="btn btn-secondary" style="flex:0 0 auto;padding:13px 18px" onclick="A.closeSuperBrandEdit()">ביטול</button>
-      <button id="sbDeleteBtn" class="btn" style="flex:0 0 auto;padding:13px 18px;background:rgba(255,68,68,.14);color:#ff6666;border:1px solid rgba(255,68,68,.3)" onclick="A.deleteSuperBrand()">🗑 מחק</button>
-      <button class="btn btn-primary" onclick="A.saveSuperBrandEdit()">שמור</button>
-    </div>
-  </div>
-</div>
-
-<!-- ERROR MODAL — unmissable, persists until dismissed -->
-<div id="errModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;align-items:center;justify-content:center;padding:20px">
-  <div style="background:#1a0a0a;border:1px solid rgba(255,68,68,.5);border-radius:18px;padding:24px;max-width:360px;width:100%">
-    <div style="font-size:28px;text-align:center;margin-bottom:10px">❌</div>
-    <h3 style="font-size:16px;font-weight:900;color:var(--danger);text-align:center;margin-bottom:10px">שגיאה בשמירת השובר</h3>
-    <div id="errMsg" style="font-size:13px;color:rgba(255,255,255,.8);line-height:1.6;margin-bottom:8px;word-break:break-word"></div>
-    <div id="errHint" style="font-size:12px;color:var(--muted);line-height:1.5;border-top:1px solid rgba(255,255,255,.08);padding-top:10px;margin-top:4px"></div>
-    <button onclick="document.getElementById('errModal').style.display='none'" style="width:100%;margin-top:16px;padding:12px;background:rgba(255,68,68,.2);border:1px solid rgba(255,68,68,.4);border-radius:10px;color:var(--danger);font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer">סגור</button>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<script>
-// ──────────────────────────────────────────────────────────
-const SUPA_URL = 'https://kgjdapoetwbtbqwplxka.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnamRhcG9ldHdidGJxd3BseGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTUyMzgsImV4cCI6MjA4ODg5MTIzOH0.3Gq9VoNVLA2sCfpNEPDBpXdiaE1WllFmDD1gGfjuYJU';
-
-const EMO = {'אופנה':'👗','מסעדות':'🍽️','קניות':'🛍️','פנאי':'🎯','ספורט':'💪','יופי':'💄','אחר':'📦'};
-
-// ── SUPER-BRAND CATALOG ──────────────────────────────────
-// מפת שוברי-על → רשימת חנויות המכבדות
-const SUPER_CATALOG = {
-  'BuyMe':      ['פוקס','קסטרו','זארה','H&M','מנגו','גולף','HOmE','ויקטוריה סיקרט','שילב','ורד הגליל','בגד עור','כיף','אנגלו סכסון','Yellow','ניו פארם','FOX HOME','נקסט','טמבור','ספרינטס'],
-  'תו הזהב':   ['פוקס','קסטרו','H&M','זארה','גולף','נייקי','אדידס','פומה','ריבוק','New Balance','שילב','כיף','ורד הגליל','HOmE','FOX HOME','טמבור','אנגלו סכסון'],
-  'נופשונית':  ['ישרוטל','דן','פסטורל','לאונרדו','אסטרל','קראון פלזה','הרדוף','קיסר','מלון ישרוטל','מלון לאונרדו'],
-  'תו פלוס':   ['שופרסל','רמי לוי','יינות ביתן','מגה','אושר עד','זול ובגדול','סופר-פארם'],
-  'Fun Online': ['KSP','iDigital','Bug','מיקרוסופט','אמאזון','סטימצקי','המשביר'],
-  'גיפט קארד ישראל': ['פוקס','קסטרו','זארה','רנואר','ענבל אור','מתוק','סוגת','אלית'],
-};
-
-const ALL_SUPER_NAMES = Object.keys(SUPER_CATALOG);
-
-const DEFAULT_BRANDS = [
-  'פוקס','קסטרו','זארה','H&M','BuyMe','תו הזהב','נופשונית','רמי לוי','שופרסל',
-  'אקסטרה','מקדונלד\'s','קפה קפה','גולף','HOmE','ויקטוריה סיקרט','אדידס','נייקי',
-  'מנגו','ספרינטס','סטימצקי','Fun Online','תו פלוס','גיפט קארד ישראל','KSP','Bug',
-];
-
-const A = {
-  db:null, user:null, vouchers:[], archived:[],
-  wallets:[], activeWalletId:null, members:[], pendingInvites:[],
-  checkId:null, tags:[], vtype:'voucher', ctype:'static',
-  filter:'הכל', tab:'home', wl:null,
-  editId:null, selectedCats:[], selectedAccepted:[],
-  _saving:false, _online:true,
-
-  // ── XSS PROTECTION ───────────────────────
-  // MUST wrap ALL user-supplied strings injected into innerHTML
-  _esc(s) {
-    return String(s||'')
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-  },
-
-  // ── OFFLINE CACHE (localStorage) ─────────
-  _cacheKey() { return 'vc_'+this.user?.id; },
-  _saveCache()  { try { localStorage.setItem(this._cacheKey(), JSON.stringify({v:this.vouchers,a:this.archived,ts:Date.now()})); } catch(e){} },
-  _loadCache()  {
-    try {
-      const d=JSON.parse(localStorage.getItem(this._cacheKey())||'null');
-      if (d) { this.vouchers=d.v||[]; this.archived=d.a||[]; return true; }
-    } catch(e) {}
-    return false;
-  },
-
-  // ── LOADING STATE ─────────────────────────
-  _setSaving(on) {
-    this._saving = on;
-    const btn = document.getElementById('saveBtn');
-    if (!btn) return;
-    btn.disabled = on;
-    btn.classList.toggle('btn-loading', on);
-  },
-
-  // ── INIT ─────────────────────────────────
-  init() {
-    if (!window.supabase) { alert('שגיאה בטעינת Supabase'); return; }
-    this.db = window.supabase.createClient(SUPA_URL, SUPA_KEY);
-    this._refreshBrandlist();
-    // online/offline monitoring
-    this._online = navigator.onLine;
-    window.addEventListener('offline', ()=>{ this._online=false; document.getElementById('offlineBanner').classList.add('show'); this.toast('⚡ אין חיבור — מציג נתונים שמורים',true); });
-    window.addEventListener('online',  ()=>{ this._online=true;  document.getElementById('offlineBanner').classList.remove('show'); this.toast('✅ חיבור חזר'); this.loadVouchers(); });
-    this.db.auth.getSession().then(({data}) => {
-      if (data?.session) { this.user = data.session.user; this.showApp(); this.loadAll(); }
-    });
-    this.db.auth.onAuthStateChange((e,s) => {
-      if (s) { this.user = s.user; this.showApp(); this.loadAll(); }
-      else this.user = null;
-    });
-  },
-
-  // ── AUTH ─────────────────────────────────
-  async login() {
-    const email = document.getElementById('loginEmail').value.trim();
-    const pass  = document.getElementById('loginPassword').value;
-    const err   = document.getElementById('loginErr');
-    err.textContent = '';
-    if (!email||!pass) { err.textContent = 'יש למלא אימייל וסיסמה'; return; }
-    const {error} = await this.db.auth.signInWithPassword({email, password:pass});
-    if (error) err.textContent = this._authErr(error.message);
-  },
-  async register() {
-    const email = document.getElementById('regEmail').value.trim();
-    const pass  = document.getElementById('regPass').value;
-    const pass2 = document.getElementById('regPass2').value;
-    const err   = document.getElementById('regErr');
-    err.textContent = '';
-    if (!email||!pass) { err.textContent = 'מלא את כל השדות'; return; }
-    if (pass!==pass2) { err.textContent = 'הסיסמאות אינן תואמות'; return; }
-    if (pass.length<6) { err.textContent = 'סיסמה לפחות 6 תווים'; return; }
-    const {error} = await this.db.auth.signUp({email, password:pass});
-    if (error) { err.textContent = this._authErr(error.message); return; }
-    this.toast('✅ נרשמת! בדוק מייל לאישור.'); this.switchForm('login');
-  },
-  async logout() { await this.db.auth.signOut(); location.reload(); },
-  _authErr(m) {
-    if (m.includes('Invalid login')) return 'אימייל או סיסמה שגויים';
-    if (m.includes('already registered')) return 'כתובת זו כבר רשומה';
-    return m;
-  },
-  switchForm(f) {
-    document.getElementById('loginForm').style.display = f==='login'?'flex':'none';
-    document.getElementById('registerForm').style.display = f==='reg'?'flex':'none';
-    document.getElementById('loginErr').textContent='';
-    document.getElementById('regErr').textContent='';
-  },
-  showApp() {
-    document.getElementById('authScreen').style.display='none';
-    const el = document.getElementById('appScreen');
-    el.classList.add('on');
-    el.style.cssText='display:flex;position:fixed;inset:0;flex-direction:column';
-    // show user name/email in header
-    const meta = this.user?.user_metadata||{};
-    const label = meta.display_name || this.user?.email?.split('@')[0] || '';
-    const hu = document.getElementById('headerUser');
-    if (hu && label) hu.textContent = label;
-  },
-
-  // ── LOAD ALL DATA ────────────────────────
-  async loadAll() {
-    await this.loadWallets();   // must finish first — loadVouchers needs this.wallets
-    await this.loadVouchers();
-    this._setupRealtime();
-  },
-
-  // ── WALLET (single per user) ──────────────
-  async loadWallets() {
-    if (!this.user) return;
-    try {
-      // get or create the ONE personal wallet
-      let {data:owned, error:oe} = await this.db.from('wallets')
-        .select('*').eq('owner_id', this.user.id).limit(1);
-      if (oe) throw oe;
-      if (!owned||owned.length===0) {
-        const {data:w, error:we} = await this.db.from('wallets')
-          .insert([{owner_id:this.user.id, name:'הארנק שלי'}]).select().single();
-        if (we) throw we;
-        owned = w?[w]:[];
-      }
-      this.activeWallet   = owned[0]||null;
-      this.activeWalletId = this.activeWallet?.id||null;
-
-      // pending invites — by user_id OR email (before user_id is set)
-      const myEmail = this.user.email||'';
-      const {data:inv} = await this.db.from('wallet_members')
-        .select('*, wallets(name, owner_id)')
-        .eq('status','pending');
-      // filter client-side (RLS returns only relevant rows)
-      this.pendingInvites = (inv||[]).filter(i=>
-        i.user_id===this.user.id ||
-        (i.invited_email&&i.invited_email.toLowerCase()===myEmail.toLowerCase())
-      );
-
-      const notif = document.getElementById('inviteNotif');
-      if (notif) notif.classList.toggle('show', this.pendingInvites.length>0);
-
-      await this.loadMembers();
-      this._updateWalletBadge();
-    } catch(e) {
-      console.warn('Wallet tables not ready (run migration):', e.message);
-      this.activeWallet=null; this.activeWalletId=null;
-      this.pendingInvites=[]; this.members=[];
-    }
-  },
-
-  async loadMembers() {
-    if (!this.activeWalletId) { this.members=[]; return; }
-    try {
-      const {data} = await this.db.from('wallet_members')
-        .select('*').eq('wallet_id', this.activeWalletId).eq('status','active');
-      this.members = data||[];
-    } catch(e) { this.members=[]; }
-  },
-
-  _isSharedWallet() { return this.members.length>0; },
-
-  _updateWalletBadge() {
-    const badge = document.getElementById('walletBadge');
-    if (!badge) return;
-    if (this._isSharedWallet()) {
-      badge.textContent=`👥 ארנק משותף — ${this.members.length} שותפים`;
-      badge.style.display='inline-block';
-    } else {
-      badge.style.display='none';
-    }
-  },
-
-  // ── INVITE ───────────────────────────────
-  async inviteUser(email) {
-    if (!email||!this.activeWalletId) return;
-    // look up user by email in auth.users via RPC (needs a Supabase function) –
-    // fallback: store by email, resolve user_id later when they log in
-    const {error} = await this.db.from('wallet_members').insert([{
-      wallet_id: this.activeWalletId,
-      invited_email: email.trim().toLowerCase(),
-      invited_by: this.user.id,
-      status: 'pending',
-      user_id: null   // resolved on accept
-    }]);
-    if (error) { this.toast('שגיאה בשליחת הזמנה: '+error.message, true); return; }
-    this.toast('📨 הזמנה נשלחה ל-'+email);
-    this.renderSettings();
-  },
-
-  async acceptInvite(memberId) {
-    const {error} = await this.db.from('wallet_members')
-      .update({status:'active', user_id: this.user.id})
-      .eq('id', memberId);
-    if (error) { this.toast('שגיאה',true); return; }
-    this.toast('✅ הצטרפת לארנק!');
-    await this.loadAll(); this.renderSettings();
-  },
-
-  async declineInvite(memberId) {
-    await this.db.from('wallet_members').delete().eq('id', memberId);
-    this.toast('❌ ההזמנה נדחתה');
-    await this.loadWallets(); this.renderSettings();
-  },
-
-  async removeMember(memberId) {
-    if (!confirm('להסיר משתמש זה מהארנק?')) return;
-    await this.db.from('wallet_members').delete().eq('id', memberId);
-    this.toast('הוסר מהארנק'); await this.loadMembers(); this.renderSettings();
-  },
-
-  // ── VOUCHERS ─────────────────────────────
-  _showSkeleton() {
-    const list=document.getElementById('vouchersList');
-    if (list) list.innerHTML='<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
-  },
-
-  async loadVouchers(retries=2) {
-    if (!this.user) return;
-
-    // offline: serve cache immediately, skip network
-    if (!this._online) {
-      if (!this.vouchers.length) this._loadCache();
-      this.render();
-      return;
-    }
-
-    if (!this.vouchers.length) this._showSkeleton();
-
-    try {
-      let {data, error} = await this.db.from('vouchers').select('*')
-        .eq('user_id', this.user.id)
-        .order('expiry_date',{ascending:true});
-      if (error) {
-        console.error('[LOAD] SELECT failed:', error);
-        throw error;
-      }
-      console.log('[LOAD] Fetched', data?.length||0, 'vouchers for user', this.user.id);
-
-      // also shared wallet vouchers
-      if (this.activeWalletId) {
-        const {data:shared} = await this.db.from('vouchers').select('*')
-          .eq('wallet_id', this.activeWalletId)
-          .neq('user_id', this.user.id)
-          .order('expiry_date',{ascending:true});
-        if (shared&&shared.length) data=[...(data||[]),...shared];
-      }
-
-      const all=data||[];
-      this.vouchers=all.filter(v=>!v.archived);
-      this.archived=all.filter(v=>v.archived);
-      this._saveCache(); // persist for offline use
-    } catch(e) {
-      if (retries>0) {
-        await new Promise(r=>setTimeout(r,1500));
-        return this.loadVouchers(retries-1);
-      }
-      // fall back to cache
-      const hadCache=this._loadCache();
-      if (!hadCache) { console.error('loadVouchers failed',e); return; }
-      this.toast('⚠️ נטענו נתונים שמורים',true);
-    }
-
-    this.render();
-    if (this.tab==='archive') this.renderArchive();
-    if (this.tab==='stats')   this.renderStats();
-  },
-
-  _setupRealtime() {
-    if (!this.user) return;
-    this.db.channel('rt-'+this.user.id)
-      .on('postgres_changes',{event:'*',schema:'public',table:'vouchers',filter:`user_id=eq.${this.user.id}`},
-        ()=>this.loadVouchers())
-      .subscribe();
-  },
-
-  // ── ERROR DISPLAY ─────────────────────────
-  _errHints: {
-    '42501': 'יש להריץ את קובץ migration-v33.sql בסופאבייס (SQL Editor). הגדרות RLS חסרות.',
-    '42703': 'עמודה חסרה בטבלה. יש להריץ את קובץ migration-v33.sql בסופאבייס.',
-    '42P01': 'טבלת vouchers לא קיימת בסופאבייס. צור אותה ואז הרץ את ה-migration.',
-    'PGRST301': 'שגיאת הרשאות — בדוק שהמפתח ב-Supabase תקין.',
-    '23505': 'שובר עם ערך זהה כבר קיים (כפילות).',
-  },
-  _showErr(error) {
-    const code = error?.code || '';
-    const msg  = error?.message || error?.details || String(error) || 'שגיאה לא ידועה';
-    const hint = this._errHints[code] || (error?.hint ? `רמז: ${error.hint}` : '');
-    console.error('[VOUCHER SAVE ERROR]', {code, msg, full: error});
-    const modal = document.getElementById('errModal');
-    document.getElementById('errMsg').textContent  = `[${code||'ERR'}] ${msg}`;
-    document.getElementById('errHint').textContent = hint || 'פתח את כלי המפתח (F12) לפרטים נוספים';
-    modal.style.display = 'flex';
-  },
-
-  // ── SAVE VOUCHER ─────────────────────────
-  async saveVoucher() {
-    if (this._saving) { this.toast('ממתין לשמירה הקודמת...'); return; }
-
-    const brand  = document.getElementById('brandInput').value.trim();
-    const amt    = parseFloat(document.getElementById('amountInput').value);
-    const date   = document.getElementById('dateInput').value;
-    const code   = document.getElementById('codeInput').value.trim();
-    const dynUrl = document.getElementById('dynamicUrl').value.trim();
-    const notes  = document.getElementById('notesInput').value.trim();
-    const cvv    = document.getElementById('cvvInput').value.trim();
-
-    if (!brand)      { this.toast('יש להזין שם חנות', true); return; }
-    if (!amt||amt<=0){ this.toast('יש להזין סכום תקין', true); return; }
-    if (!date)       { this.toast('יש לבחור תאריך תפוגה', true); return; }
-    if (!this.user)  { this.toast('לא מחובר — רענן את הדף', true); return; }
-
-    this._setSaving(true);
-    try {
-      const cats       = this.selectedCats;
-      const primaryCat = cats[0] || 'אחר';
-      const isSuperBrand = this._getSuperCatalog()[brand] !== undefined;
-
-      // ── EDIT MODE ──
-      if (this.editId) {
-        const existing = [...this.vouchers,...this.archived].find(v=>v.id===this.editId);
-        const newBal   = existing ? Math.min(existing.current_balance, amt) : amt;
-        // try full update, fall back to minimal
-        let {error} = await this.db.from('vouchers').update({
-          brand_name:brand, category:primaryCat, original_value:amt, current_balance:newBal,
-          expiry_date:date, code:code||null, dynamic_url:dynUrl||null,
-          notes:notes||null, cvv:cvv||null, tags:this.tags,
-          type:this.vtype, categories:cats, is_super_brand:isSuperBrand,
-          accepted_brands:this.selectedAccepted, wallet_id:this.activeWalletId||null,
-        }).eq('id', this.editId);
-        if (error) {
-          // fallback — only original columns
-          ({error} = await this.db.from('vouchers').update({
-            brand_name:brand, category:primaryCat, original_value:amt, current_balance:newBal,
-            expiry_date:date, code:code||null, dynamic_url:dynUrl||null,
-            notes:notes||null, cvv:cvv||null, tags:this.tags,
-          }).eq('id', this.editId));
-        }
-        if (error) { this._showErr(error); return; }
-        this.toast('✅ עודכן בהצלחה!');
-        this.closeAdd();
-        await this.loadVouchers();
-        return;
-      }
-
-      // ── DUPLICATE CHECK ──
-      if (code) {
-        const dup = [...this.vouchers,...this.archived].find(v=>v.code&&v.code===code);
-        if (dup) {
-          this.toast(`⚠️ קוד זה כבר קיים בארנק!`, true);
-          document.getElementById('dupWarn').classList.add('show');
-          return;
-        }
-      }
-
-      // ── INSERT — try full row first, then minimal ──
-      // "full" includes migration-v33 columns  
-      const fullRow = {
-        user_id:this.user.id, brand_name:brand, category:primaryCat,
-        type:this.vtype, original_value:amt, current_balance:amt,
-        expiry_date:date, code:code||null, dynamic_url:dynUrl||null,
-        notes:notes||null, cvv:cvv||null, tags:this.tags,
-        categories:cats, archived:false,
-        is_super_brand:isSuperBrand, accepted_brands:this.selectedAccepted,
-        wallet_id:this.activeWalletId||null,
-      };
-      // "safe" — only columns that exist in the original schema
-      const safeRow = {
-        user_id:this.user.id, brand_name:brand, category:primaryCat,
-        type:this.vtype, original_value:amt, current_balance:amt,
-        expiry_date:date, code:code||null, dynamic_url:dynUrl||null,
-        notes:notes||null, cvv:cvv||null, tags:this.tags,
-      };
-
-      console.log('[SAVE] Attempting insert for user:', this.user.id, '| brand:', brand);
-
-      let {error} = await this.db.from('vouchers').insert([fullRow]);
-      if (error) {
-        console.warn('[SAVE] Full insert failed ('+error.code+'), trying safe row:', error.message);
-        ({error} = await this.db.from('vouchers').insert([safeRow]));
-      }
-      if (error) {
-        console.error('[SAVE] Safe insert also failed:', error);
-        this._showErr(error);
-        return;
-      }
-
-      console.log('[SAVE] ✅ Insert succeeded');
-      this.toast('✅ השובר נוסף!');
-      this.closeAdd();
-      await this.loadVouchers();
-
-    } finally {
-      this._setSaving(false);
-    }
-  },
-
-  // ── EDIT ─────────────────────────────────
-  openEdit(id, ev) {
-    ev.stopPropagation();
-    const v = [...this.vouchers,...this.archived].find(x=>x.id===id);
-    if (!v) return;
-    this.editId = id;
-    document.getElementById('modalTitle').textContent = '✏️ עריכת שובר';
-    document.getElementById('saveBtn').textContent = 'שמור שינויים';
-    document.getElementById('brandInput').value  = v.brand_name||'';
-    document.getElementById('amountInput').value = v.original_value||'';
-    document.getElementById('dateInput').value   = v.expiry_date||'';
-    document.getElementById('codeInput').value   = v.code||'';
-    document.getElementById('dynamicUrl').value  = v.dynamic_url||'';
-    document.getElementById('notesInput').value  = v.notes||'';
-    document.getElementById('cvvInput').value    = v.cvv||'';
-    this.selectedCats     = v.categories||(v.category?[v.category]:[]);
-    this.selectedAccepted = v.accepted_brands||[];
-    this._renderCatChips();
-    this.onBrandInput(); // trigger super-brand section if needed
-    this._renderAcceptedChips(v.brand_name);
-    this.setType(v.type||'voucher');
-    this.setCodeType(v.dynamic_url?'dynamic':'static');
-    this.tags = v.tags||[];
-    this._renderTags();
-    if (v.code||v.dynamic_url||v.cvv) {
-      document.querySelector('#secCode .disc-btn').classList.add('open');
-      document.querySelector('#secCode .disc-body').classList.add('open');
-    }
-    document.getElementById('addModal').classList.add('open');
-  },
-
-  // ── DELETE / ARCHIVE ─────────────────────
-  async deleteVoucher(id,ev) {
-    ev.stopPropagation();
-    if (!confirm('למחוק לצמיתות?')) return;
-    const {error} = await this.db.from('vouchers').delete().eq('id',id);
-    if (error) { this.toast('שגיאה',true); return; }
-    this.toast('🗑️ נמחק'); this.loadVouchers();
-  },
-  async archiveVoucher(id,ev) {
-    if (ev) ev.stopPropagation();
-    const {error} = await this.db.from('vouchers').update({archived:true}).eq('id',id);
-    if (error) { this.toast('שגיאה',true); return; }
-    this.toast('🗄️ הועבר לארכיון'); this.loadVouchers();
-  },
-  async unarchive(id,ev) {
-    if (ev) ev.stopPropagation();
-    await this.db.from('vouchers').update({archived:false}).eq('id',id);
-    this.toast('↩️ הוחזר לארנק'); this.loadVouchers();
-  },
-  archiveCurrent() { if (this.checkId) { this.archiveVoucher(this.checkId,null); this.closeCheckout(); } },
-
-  // ── REDEEM ───────────────────────────────
-  async redeem() {
-    const amt = parseFloat(document.getElementById('redeemInput').value);
-    if (!amt||amt<=0) { this.toast('הזן סכום תקין',true); return; }
-    const v = this.vouchers.find(x=>x.id===this.checkId);
-    if (!v) return;
-
-    // OFFLINE GUARD for shared vouchers
-    const isShared = v.wallet_id && this._isSharedWallet();
-    if (isShared && !navigator.onLine) {
-      this.toast('⚡ אין אינטרנט — לא ניתן לעדכן שובר משותף',true);
-      document.getElementById('offlineWarn').classList.add('show');
-      return;
-    }
-
-    const newBal = Math.max(0, v.current_balance - amt);
-    const {error} = await this.db.from('vouchers').update({current_balance:newBal}).eq('id',this.checkId);
-    if (error) { this.toast('שגיאה',true); return; }
-    document.getElementById('coBal').textContent='₪'+newBal;
-    document.getElementById('redeemInput').value='';
-    this.toast('✅ יתרה עודכנה: ₪'+newBal);
-    if (newBal===0) { document.getElementById('archiveBtnCo').style.display='block'; }
-    this.loadVouchers();
-  },
-
-  // ── OPEN/CLOSE ADD MODAL ─────────────────
-  openAdd() {
-    this.editId=null;
-    document.getElementById('modalTitle').textContent='➕ הוסף שובר';
-    document.getElementById('saveBtn').textContent='הוסף שובר';
-    document.getElementById('dupWarn').classList.remove('show');
-    const d=new Date(); d.setFullYear(d.getFullYear()+5);
-    document.getElementById('dateInput').value=d.toISOString().split('T')[0];
-    document.getElementById('addModal').classList.add('open');
-  },
-  closeAdd() {
-    document.getElementById('addModal').classList.remove('open');
-    ['brandInput','amountInput','codeInput','dynamicUrl','notesInput','tagIn','cvvInput']
-      .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-    document.getElementById('dateInput').value='';
-    document.getElementById('dupWarn').classList.remove('show');
-    document.getElementById('superBrandSection').style.display='none';
-    this.tags=[]; this._renderTags();
-    this.selectedCats=[]; this._renderCatChips();
-    this.selectedAccepted=[];
-    this.setType('voucher'); this.setCodeType('static');
-    this.editId=null;
-    ['secCode','secExtras'].forEach(id=>{
-      document.querySelector('#'+id+' .disc-btn').classList.remove('open');
-      document.querySelector('#'+id+' .disc-body').classList.remove('open');
-    });
-  },
-
-  // ── CHECKOUT ─────────────────────────────
-  openCheckout(id) {
-    const v = [...this.vouchers,...this.archived].find(x=>x.id===id);
-    if (!v) return;
-    this.checkId=id;
-    const allCats = v.categories&&v.categories.length ? v.categories : [v.category||''];
-    document.getElementById('coEmoji').textContent = EMO[allCats[0]]||'🏪';
-    document.getElementById('coName').textContent  = v.brand_name;
-    document.getElementById('coCat').textContent   = allCats.join(' · ');
-    document.getElementById('coBal').textContent   = '₪'+(v.current_balance||0);
-    document.getElementById('coSub').textContent   = 'מתוך ₪'+v.original_value+' המקוריים';
-    document.getElementById('redeemInput').value   = '';
-    document.getElementById('archiveBtnCo').style.display = (v.current_balance===0)?'block':'none';
-    document.getElementById('offlineWarn').classList.remove('show');
-
-    // super-brand accepted stores
-    const accEl = document.getElementById('coAccepted');
-    if (v.accepted_brands&&v.accepted_brands.length) {
-      accEl.textContent = '⭐ תקף ב: '+v.accepted_brands.join(' · ');
-      accEl.style.display='block';
-    } else { accEl.style.display='none'; }
-
-    // offline warning pre-check
-    const isShared = v.wallet_id&&this._isSharedWallet();
-    if (isShared&&!navigator.onLine) document.getElementById('offlineWarn').classList.add('show');
-
-    const hasSta=!!v.code, hasDyn=!!v.dynamic_url, hasCvv=!!v.cvv;
-    document.getElementById('staticZone').style.display  = hasSta?'block':'none';
-    document.getElementById('dynamicZone').style.display = hasDyn?'block':'none';
-    document.getElementById('cvvZone').style.display     = hasCvv?'block':'none';
-    if (hasCvv) document.getElementById('coCvv').textContent=v.cvv;
-    if (hasSta) this._genBarcode(v.code);
-    document.getElementById('checkoutScreen').classList.add('on');
-    this._wakeLock(true);
-  },
-  closeCheckout() {
-    document.getElementById('checkoutScreen').classList.remove('on');
-    this.checkId=null; this._wakeLock(false);
-    document.getElementById('qrZone').innerHTML='';
-    document.getElementById('barcodeCanvas').style.display='block';
-  },
-  openDynamic() {
-    const v=[...this.vouchers,...this.archived].find(x=>x.id===this.checkId);
-    if (v&&v.dynamic_url) window.open(v.dynamic_url,'_blank');
-  },
-
-  // ── SUPER-BRAND UI ───────────────────────
-  onBrandInput() {
-    const brand = document.getElementById('brandInput').value.trim();
-    this._renderAcceptedChips(brand);
-  },
-  _renderAcceptedChips(brand) {
-    const sec = document.getElementById('superBrandSection');
-    const liveCatalog = this._getSuperCatalog();
-    if (!brand || !liveCatalog[brand]) { sec.style.display='none'; this.selectedAccepted=[]; return; }
-    // ✅ AUTO-SELECT all stores from this super-brand
-    this.selectedAccepted = [...liveCatalog[brand]];
-    const notice = document.getElementById('superBrandNotice');
-    if (notice) notice.textContent = `תקף ב-${this.selectedAccepted.length} רשתות (${this.selectedAccepted.slice(0,3).join(', ')}${this.selectedAccepted.length>3?` +${this.selectedAccepted.length-3} נוספות`:''})`;
-    sec.style.display='block';
-  },
-  toggleAccepted(store) {}, // no-op — all selected automatically
-
-  // ── BRAND PICKER (mobile-friendly) ───────
-  openBrandPicker() {
-    document.getElementById('brandPickerModal').classList.add('open');
-    const search = document.getElementById('brandPickerSearch');
-    search.value = '';
-    this._renderBrandPickerList('');
-    setTimeout(()=>search.focus(), 150);
-    search.oninput = ()=>this._renderBrandPickerList(search.value.toLowerCase());
-  },
-  closeBrandPicker() { document.getElementById('brandPickerModal').classList.remove('open'); },
-  _renderBrandPickerList(q) {
-    const list = document.getElementById('brandPickerList');
-    const brands = this._getBrands();
-    const catalog = this._getSuperCatalog();
-    const superNames = Object.keys(catalog);
-    const filtered = q ? brands.filter(b=>b.toLowerCase().includes(q)||b.includes(q)) : brands;
-    const superFiltered = filtered.filter(b=>superNames.includes(b));
-    const regularFiltered = filtered.filter(b=>!superNames.includes(b));
-    let html = '';
-    if (superFiltered.length) {
-      html += `<div class="bp-section">⭐ שוברי-על</div>`;
-      html += superFiltered.map(b=>`<div class="bp-item bp-super" data-brand="${this._esc(b)}" onclick="A.pickBrand(this.dataset.brand)">⭐ ${this._esc(b)}</div>`).join('');
-    }
-    if (regularFiltered.length) {
-      html += `<div class="bp-section">חנויות</div>`;
-      html += regularFiltered.map(b=>`<div class="bp-item" data-brand="${this._esc(b)}" onclick="A.pickBrand(this.dataset.brand)">${this._esc(b)}</div>`).join('');
-    }
-    if (!filtered.length) html = `<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">לא נמצאו תוצאות<br><span style="font-size:11px;margin-top:6px;display:block">לחץ + להוסיף חנות חדשה</span></div>`;
-    list.innerHTML = html;
-  },
-  pickBrand(name) {
-    document.getElementById('brandInput').value = name;
-    this.closeBrandPicker();
-    this.onBrandInput();
-  },
-
-  // ── BRANDS ───────────────────────────────
-  _getBrands() {
-    const custom = JSON.parse(localStorage.getItem('customBrands')||'[]');
-    return [...new Set([...DEFAULT_BRANDS,...custom])].sort((a,b)=>a.localeCompare(b,'he'));
-  },
-  _refreshBrandlist() {}, // kept for compatibility — no datalist anymore
-  openBrandModal() { document.getElementById('brandModal').classList.add('open'); document.getElementById('newBrandInput').value=''; },
-  closeBrandModal() { document.getElementById('brandModal').classList.remove('open'); },
-  saveBrand() {
-    const name = document.getElementById('newBrandInput').value.trim();
-    if (!name) return;
-    const custom = JSON.parse(localStorage.getItem('customBrands')||'[]');
-    if (!custom.includes(name)) { custom.push(name); localStorage.setItem('customBrands',JSON.stringify(custom)); }
-    document.getElementById('brandInput').value=name;
-    this.closeBrandModal();
-    this.toast('✅ החנות נוספה');
-    this.onBrandInput();
-  },
-
-  // ── CATEGORIES ───────────────────────────
-  toggleCat(cat) {
-    const i=this.selectedCats.indexOf(cat);
-    if (i===-1) this.selectedCats.push(cat);
-    else this.selectedCats.splice(i,1);
-    this._renderCatChips();
-  },
-  _renderCatChips() {
-    document.querySelectorAll('#catChips .mchip').forEach(el=>{
-      el.classList.toggle('sel', this.selectedCats.includes(el.dataset.cat));
-    });
-  },
-
-  // ── DUPLICATE CHECK ──────────────────────
-  checkDup() {
-    const code = document.getElementById('codeInput').value.trim();
-    const dup = code&&!this.editId&&[...this.vouchers,...this.archived].find(v=>v.code&&v.code===code);
-    document.getElementById('dupWarn').classList.toggle('show',!!dup);
-  },
-
-  // ── FORM HELPERS ─────────────────────────
-  setType(t) {
-    this.vtype=t;
-    document.getElementById('typeV').classList.toggle('active',t==='voucher');
-    document.getElementById('typeC').classList.toggle('active',t==='coupon');
-    document.getElementById('amtLabel').textContent=t==='voucher'?'יתרה (₪) *':'ערך הנחה *';
-  },
-  setCodeType(t) {
-    this.ctype=t;
-    document.getElementById('ctStatic').classList.toggle('active',t==='static');
-    document.getElementById('ctDynamic').classList.toggle('active',t==='dynamic');
-    document.getElementById('staticField').style.display  = t==='static'?'block':'none';
-    document.getElementById('dynamicField').style.display = t==='dynamic'?'block':'none';
-  },
-  toggleDisc(id) {
-    document.querySelector('#'+id+' .disc-btn').classList.toggle('open');
-    document.querySelector('#'+id+' .disc-body').classList.toggle('open');
-  },
-  handleTag(e) {
-    if ((e.key==='Enter'||e.key===',')&&e.target.value.trim()) {
-      e.preventDefault();
-      const t=e.target.value.trim().replace(',','');
-      if (t&&!this.tags.includes(t)) { this.tags.push(t); this._renderTags(); }
-      e.target.value='';
-    }
-  },
-  removeTag(t) { this.tags=this.tags.filter(x=>x!==t); this._renderTags(); },
-  _renderTags() {
-    const wrap=document.getElementById('tagsWrap');
-    const inp=document.getElementById('tagIn');
-    wrap.innerHTML='';
-    this.tags.forEach(t=>{
-      // ✅ XSS: use DOM APIs, no innerHTML with user data
-      const pill=document.createElement('span'); pill.className='tag-pill';
-      const txt=document.createTextNode(t+' ');
-      const btn=document.createElement('button');
-      btn.textContent='×';
-      btn.setAttribute('aria-label','הסר תגית');
-      btn.addEventListener('click', ()=>A.removeTag(t));
-      pill.appendChild(txt); pill.appendChild(btn);
-      wrap.appendChild(pill);
-    });
-    wrap.appendChild(inp);
-  },
-
-  // ── FILTER / TAB ─────────────────────────
-  setFilter(f) {
-    this.filter=f;
-    document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active',c.dataset.f===f));
-    this.render();
-  },
-  showTab(t) {
-    this.tab=t;
-    const tabs=['homeTab','archiveTab','statsScreen','settingsScreen'];
-    tabs.forEach(id=>{
-      const el=document.getElementById(id);
-      if (!el) return;
-      if (id==='homeTab'||id==='archiveTab') {
-        el.classList.toggle('hidden', !(id===t+'Tab'));
-      } else {
-        el.classList.toggle('on', id===t+'Screen');
-      }
-    });
-    ['navHome','navArchive','navStats','navSettings'].forEach(id=>{
-      const el=document.getElementById(id);
-      if (el) el.classList.toggle('active', id==='nav'+t.charAt(0).toUpperCase()+t.slice(1));
-    });
-    document.getElementById('mainFab').style.display=t==='home'?'flex':'none';
-    if (t==='home')     { const h=document.getElementById('homeTab'); h.classList.remove('hidden'); }
-    if (t==='archive')  this.renderArchive();
-    if (t==='stats')    this.renderStats();
-    if (t==='settings') this.renderSettings();
-  },
-
-  // ── TOAST ────────────────────────────────
-  toast(msg,isErr=false) {
-    const el=document.getElementById('toast');
-    el.textContent=msg; el.className='toast show'+(isErr?' err':'');
-    clearTimeout(this._tid);
-    this._tid=setTimeout(()=>el.className='toast',2800);
-  },
-
-  // ── RENDER HELPERS ───────────────────────
-  _days(d) { return Math.ceil((new Date(d)-new Date())/86400000); },
-  _expTxt(d) {
-    if (d<0) return 'פג תוקף';
-    if (d===0) return 'היום!';
-    if (d===1) return 'מחר';
-    if (d<=7)  return `${d} ימים`;
-    const dt=new Date(Date.now()+d*86400000);
-    return dt.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'2-digit'});
-  },
-  _expCls(d)  { return d<0?'expired':d<=7?'soon':''; },
-  _cardCls(v) {
-    if (v.archived) return 'archived-card';
-    if (v.current_balance===0) return 'zeroed';
-    const d=this._days(v.expiry_date);
-    return d<0?'expired':d<=7?'warn':'';
-  },
-  _getCatDisplay(v) {
-    if (v.categories&&v.categories.length) return v.categories.join(' · ');
-    return v.category||'';
-  },
-  _getEmoji(v) {
-    const cats=v.categories&&v.categories.length?v.categories:[v.category];
-    return EMO[cats[0]]||'🏪';
-  },
-  _isVoucherShared(v) {
-    return !!(v.wallet_id && this.members.length>0);
-  },
-
-  async _wakeLock(on) {
-    try {
-      if (on&&'wakeLock' in navigator) this.wl=await navigator.wakeLock.request('screen');
-      else if (!on&&this.wl) { await this.wl.release(); this.wl=null; }
-    } catch(e) {}
-  },
-
-  _genBarcode(code) {
-    const canvas=document.getElementById('barcodeCanvas');
-    const qrZone=document.getElementById('qrZone');
-    document.getElementById('coCode').textContent=code;
-    qrZone.innerHTML=''; canvas.style.display='block';
-    try {
-      if (window.JsBarcode&&/^[0-9]{6,}$/.test(code)) {
-        JsBarcode(canvas,code,{format:'CODE128',width:2,height:65,displayValue:false,background:'#ffffff',lineColor:'#000000',margin:6});
-      } else if (window.QRCode) {
-        canvas.style.display='none';
-        new QRCode(qrZone,{text:code,width:190,height:190,colorLight:'#ffffff',colorDark:'#000000'});
-      }
-    } catch(e) { console.warn('barcode err',e); }
-  },
-
-  // ── RENDER HOME ──────────────────────────
-  render() {
-    const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
-    const f=this.filter;
-    let items=[...this.vouchers];
-
-    if (q) items=items.filter(v=>
-      v.brand_name.toLowerCase().includes(q) ||
-      (v.code||'').toLowerCase().includes(q) ||
-      (v.category||'').includes(q) ||
-      (v.categories||[]).some(c=>c.includes(q)) ||
-      (v.tags||[]).some(t=>t.toLowerCase().includes(q)) ||
-      // ✅ SUPER-BRAND SEARCH: match child stores
-      (v.accepted_brands||[]).some(s=>s.toLowerCase().includes(q))
-    );
-
-    if (f==='פג תוקף קרוב') items=items.filter(v=>{ const d=this._days(v.expiry_date); return d>=0&&d<=14; });
-    else if (f==='משותף') items=items.filter(v=>this._isVoucherShared(v));
-    else if (f!=='הכל') items=items.filter(v=>(v.categories||[v.category||'']).includes(f));
-
-    const total=this.vouchers.filter(v=>this._days(v.expiry_date)>=0&&!v.archived).reduce((s,v)=>s+(v.current_balance||0),0);
-    document.getElementById('totalBalance').textContent=total.toLocaleString('he-IL');
-
-    const list=document.getElementById('vouchersList');
-    if (!list) return;
-    if (items.length===0) {
-      list.innerHTML=`<div class="empty-state"><div class="icon">📭</div><h3>${q||f!=='הכל'?'לא נמצאו תוצאות':'הארנק ריק'}</h3><p>${q||f!=='הכל'?'נסה חיפוש אחר':'לחץ + להוספת שובר'}</p></div>`;
-      return;
-    }
-    list.innerHTML=items.map(v=>{
-      const d=this._days(v.expiry_date);
-      const ec=(v.current_balance===0)?'archive':this._expCls(d);
-      const cc=this._cardCls(v);
-      const emo=this._getEmoji(v);
-      // ✅ XSS: all user-supplied strings escaped
-      const bname=this._esc(v.brand_name);
-      const cat=this._esc(this._getCatDisplay(v));
-      const tagsHtml=(v.tags||[]).length?v.tags.map(t=>`<span class="v-tag">${this._esc(t)}</span>`).join(''):'';
-      const dynDot=v.dynamic_url?'<span class="dyn-dot"></span>':'';
-      const sharedDot=this._isVoucherShared(v)?'<span class="shared-dot" title="ארנק משותף"></span>':'';
-      const superBadge=v.is_super_brand?'<span class="super-badge">שובר-על</span>':'';
-      const sharedCardCls=this._isVoucherShared(v)?'shared-card':'';
-      const zeroBadge=(v.current_balance===0)?`<span class="expiry-badge archive">יתרה אפס</span>`:`<span class="expiry-badge ${ec}">${this._expTxt(v.expiry_date)}</span>`;
-      const acc=v.accepted_brands&&v.accepted_brands.length
-        ? `<div class="v-cat" style="color:var(--warn);font-size:11px;margin-top:2px">⭐ ${v.accepted_brands.slice(0,3).map(s=>this._esc(s)).join(', ')}${v.accepted_brands.length>3?' +עוד':''}</div>` : '';
-      return `<div class="voucher-card ${cc} ${sharedCardCls}" onclick="A.openCheckout('${v.id}')">
-        <div class="card-actions">
-          <button class="card-btn del"  onclick="A.deleteVoucher('${v.id}',event)">🗑</button>
-          <button class="card-btn edit" onclick="A.openEdit('${v.id}',event)">✏️</button>
-          <button class="card-btn arch" onclick="A.archiveVoucher('${v.id}',event)">🗄</button>
-        </div>
-        <div class="v-emoji">${emo}</div>
-        <div class="v-body">
-          <div class="v-name">${superBadge}${bname}${sharedDot}</div>
-          <div class="v-cat">${dynDot}${cat}</div>
-          ${acc}
-          ${tagsHtml?`<div class="v-tags">${tagsHtml}</div>`:''}
-        </div>
-        <div class="v-right">
-          <div class="v-bal${v.current_balance===0?' zero':''}">₪${(v.current_balance||0).toLocaleString()}</div>
-          ${zeroBadge}
-        </div>
-      </div>`;
-    }).join('');
-  },
-
-  // ── RENDER ARCHIVE ───────────────────────
-  renderArchive() {
-    const list=document.getElementById('archiveList');
-    if (!list) return;
-    if (this.archived.length===0) {
-      list.innerHTML=`<div class="empty-state"><div class="icon">🗄️</div><h3>הארכיון ריק</h3><p>שוברים שנוצלו יופיעו כאן</p></div>`;
-      return;
-    }
-    list.innerHTML=this.archived.map(v=>`<div class="voucher-card archived-card" onclick="A.openCheckout('${v.id}')">
-      <div class="card-actions">
-        <button class="card-btn del" onclick="A.deleteVoucher('${v.id}',event)">🗑</button>
-        <button class="card-btn edit" onclick="A.openEdit('${v.id}',event)" style="background:rgba(167,139,250,.15);color:var(--archive)">↩️</button>
-      </div>
-      <div class="v-emoji">${this._getEmoji(v)}</div>
-      <div class="v-body"><div class="v-name">${this._esc(v.brand_name)}</div><div class="v-cat">${this._esc(this._getCatDisplay(v))}</div></div>
-      <div class="v-right"><div class="v-bal zero">₪0</div><span class="expiry-badge archive">בארכיון</span></div>
-    </div>`).join('');
-  },
-
-  // ── RENDER STATS ─────────────────────────
-  renderStats() {
-    const active=this.vouchers.filter(v=>this._days(v.expiry_date)>=0);
-    const expired=this.vouchers.filter(v=>this._days(v.expiry_date)<0);
-    const total=active.reduce((s,v)=>s+(v.current_balance||0),0);
-    const soon=active.filter(v=>this._days(v.expiry_date)<=14).length;
-    const cats={};
-    active.forEach(v=>{
-      const cl=v.categories&&v.categories.length?v.categories:[v.category||'אחר'];
-      cl.forEach(c=>{ cats[c]=(cats[c]||0)+(v.current_balance||0); });
-    });
-    const maxV=Math.max(...Object.values(cats),1);
-    const catHtml=Object.entries(cats).sort((a,b)=>b[1]-a[1])
-      .map(([c,val])=>`<div class="cat-row"><span>${EMO[c]||'📦'} ${this._esc(c)}</span><span style="color:var(--accent);font-weight:700">₪${val.toLocaleString()}</span></div><div class="cat-bar"><div class="cat-fill" style="width:${(val/maxV*100).toFixed(0)}%"></div></div>`).join('');
-    document.getElementById('statsContent').innerHTML=`
-    <div class="stats-grid">
-      <div class="stat-card"><div class="stat-val">₪${total.toLocaleString()}</div><div class="stat-lbl">סך יתרה פנויה</div></div>
-      <div class="stat-card"><div class="stat-val">${active.length}</div><div class="stat-lbl">שוברים פעילים</div></div>
-      <div class="stat-card"><div class="stat-val" style="color:var(--warn)">${soon}</div><div class="stat-lbl">פגים תוך 14 יום</div></div>
-      <div class="stat-card"><div class="stat-val" style="color:var(--archive)">${this.archived.length}</div><div class="stat-lbl">בארכיון</div></div>
-      <div class="stat-card"><div class="stat-val" style="color:var(--danger)">${expired.length}</div><div class="stat-lbl">פגי תוקף</div></div>
-      <div class="stat-card"><div class="stat-val" style="color:var(--shared)">${this.members.length}</div><div class="stat-lbl">שותפים לארנק</div></div>
-      <div class="stat-card wide"><div style="font-weight:900;margin-bottom:14px;font-size:15px">לפי קטגוריה</div>${catHtml||'<div style="color:var(--muted);font-size:13px">אין נתונים</div>'}</div>
-    </div>`;
-  },
-
-  // ── DB HEALTH CHECK ──────────────────────
-  async runDbCheck() {
-    this.toast('בודק חיבור...');
-    const steps = [];
-    let ok = true;
-
-    // 1. Auth check
-    const {data:{session}} = await this.db.auth.getSession();
-    if (!session) { steps.push('❌ לא מחובר — יש להתחבר מחדש'); ok=false; }
-    else steps.push(`✅ מחובר כ: ${session.user.email}`);
-
-    if (ok) {
-      // 2. SELECT check
-      const {data, error:selErr} = await this.db.from('vouchers').select('id').limit(1);
-      if (selErr) {
-        steps.push(`❌ SELECT נכשל [${selErr.code}]: ${selErr.message}`);
-        if (selErr.code==='42501') steps.push('   → יש להריץ migration-v33.sql בסופאבייס');
-        if (selErr.code==='42P01') steps.push('   → טבלת vouchers לא קיימת');
-        ok=false;
-      } else {
-        steps.push(`✅ SELECT עובד (${data?.length||0} שורות ראשונות)`);
-      }
-    }
-
-    if (ok) {
-      // 3. INSERT check — insert a test row then delete it
-      const testRow = {
-        user_id:session.user.id, brand_name:'__test__',
-        category:'אחר', original_value:1, current_balance:1,
-        expiry_date:'2099-01-01', type:'voucher', tags:[]
-      };
-      const {data:ins, error:insErr} = await this.db.from('vouchers').insert([testRow]).select('id').single();
-      if (insErr) {
-        steps.push(`❌ INSERT נכשל [${insErr.code}]: ${insErr.message}`);
-        if (insErr.code==='42501') steps.push('   → הרשאות RLS חסרות. הרץ migration-v33.sql');
-        if (insErr.code==='42703') steps.push('   → עמודה חסרה. הרץ migration-v33.sql');
-        ok=false;
-      } else {
-        steps.push('✅ INSERT עובד');
-        // cleanup
-        if (ins?.id) await this.db.from('vouchers').delete().eq('id', ins.id);
-        steps.push('✅ DELETE עובד');
-      }
-    }
-
-    alert(steps.join('\n'));
-    console.log('[DB CHECK]', steps);
-    if (!ok) steps.filter(s=>s.includes('→')).forEach(s=>console.warn(s));
-  },
-  openAdmin() {
-    document.getElementById('adminPanel').style.display='flex';
-    this.renderAdmin();
-  },
-  closeAdmin() { document.getElementById('adminPanel').style.display='none'; },
-
-  renderAdmin() {
-    const body = document.getElementById('adminBody');
-    if (!body) return;
-
-    // stats for admin
-    const allV = [...this.vouchers, ...this.archived];
-    const active = this.vouchers.filter(v=>this._days(v.expiry_date)>=0);
-    const totalBal = active.reduce((s,v)=>s+(v.current_balance||0),0);
-    const expiringSoon = active.filter(v=>{ const d=this._days(v.expiry_date); return d>=0&&d<=14; });
-    const totalOriginal = allV.reduce((s,v)=>s+(v.original_value||0),0);
-    const totalUsed = allV.reduce((s,v)=>s+((v.original_value||0)-(v.current_balance||0)),0);
-
-    // members
-    const membersHtml = this.members.map(m=>`
-      <div class="admin-stat-row">
-        <span>👤 ${this._esc(m.invited_email||m.user_id||'—')}</span>
-        <button class="member-remove" onclick="A.removeMember('${m.id}')">הסר</button>
-      </div>`).join('') || '<p style="font-size:13px;color:var(--muted)">אין חברים עדיין</p>';
-
-    // super-brand catalog
-    const catalog = this._getSuperCatalog();
-    const superHtml = Object.entries(catalog).map(([name,stores])=>{
-      const sid = name.replace(/[^a-zA-Z0-9]/g,'_');
-      const ename = this._esc(name);
-      return `<div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <span style="font-weight:900">⭐ ${ename}</span>
-          <button class="sb-edit-btn" data-sbname="${ename}" style="background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.25);border-radius:7px;color:var(--accent);padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">✏️</button>
-        </div>
-        <div style="font-size:11px;color:var(--muted);line-height:1.8">${stores.map(s=>this._esc(s)).join(' · ')}</div>
-        <div style="display:flex;gap:7px;margin-top:10px">
-          <input id="sbbulk_${sid}" data-sbname="${ename}" style="flex:1;padding:7px 10px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:12px" placeholder="הוסף חנויות (פסיק / שורה)">
-          <button class="sb-add-btn" data-sbsid="${sid}" style="padding:7px 12px;background:rgba(255,170,0,.14);border:1px solid rgba(255,170,0,.3);border-radius:8px;color:var(--warn);font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer">+ הוסף</button>
-        </div>
-      </div>`;
-    }).join('');
-
-    // wallet name edit
-    const wname = this._esc(this.activeWallet?.name||'הארנק שלי');
-
-    body.innerHTML = `
-      <!-- סטטיסטיקות -->
-      <div class="admin-card">
-        <h3>📊 סטטיסטיקות ארנק</h3>
-        <div class="admin-stat-row"><span>יתרה פנויה כוללת</span><span class="admin-stat-val">₪${totalBal.toLocaleString()}</span></div>
-        <div class="admin-stat-row"><span>שוברים פעילים</span><span class="admin-stat-val">${active.length}</span></div>
-        <div class="admin-stat-row"><span>שוברים בארכיון</span><span class="admin-stat-val">${this.archived.length}</span></div>
-        <div class="admin-stat-row"><span>פגים תוך 14 יום</span><span class="admin-stat-val" style="color:var(--warn)">${expiringSoon.length}</span></div>
-        <div class="admin-stat-row"><span>סה"כ שווי רכישות</span><span class="admin-stat-val">₪${totalOriginal.toLocaleString()}</span></div>
-        <div class="admin-stat-row"><span>סה"כ נוצל</span><span class="admin-stat-val" style="color:var(--archive)">₪${totalUsed.toLocaleString()}</span></div>
-      </div>
-
-      <!-- שם הארנק -->
-      <div class="admin-card">
-        <h3>🏷️ שם הארנק</h3>
-        <div style="display:flex;gap:8px">
-          <input id="walletNameInput" value="${wname}" style="flex:1;padding:11px 13px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--font);font-size:14px">
-          <button onclick="A.renameWallet()" style="padding:11px 16px;background:rgba(0,255,136,.14);border:1px solid rgba(0,255,136,.3);border-radius:10px;color:var(--accent);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer">שמור</button>
-        </div>
-      </div>
-
-      <!-- חברים -->
-      <div class="admin-card">
-        <h3>👥 ניהול חברים (${this.members.length} חברים)</h3>
-        ${membersHtml}
-        <div class="invite-row" style="margin-top:12px">
-          <input type="email" id="inviteEmailInput" placeholder="אימייל לשליחת הזמנה...">
-          <button class="invite-btn" onclick="A.inviteUser(document.getElementById('inviteEmailInput').value)">📨 הזמן</button>
-        </div>
-      </div>
-
-      <!-- שוברי-על -->
-      <div class="admin-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-          <h3 style="margin:0">⭐ ניהול שוברי-על</h3>
-          <button onclick="A.openSuperBrandEdit('__new__')" style="background:rgba(255,170,0,.14);border:1px solid rgba(255,170,0,.3);border-radius:9px;color:var(--warn);padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">+ חדש</button>
-        </div>
-        ${superHtml}
-      </div>
-
-      <!-- ייצוא נתונים -->
-      <div class="admin-card">
-        <h3>📤 ייצוא נתונים</h3>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:12px">הורד את כל השוברים כקובץ CSV</p>
-        <button onclick="A.exportCSV()" style="width:100%;padding:12px;background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.25);border-radius:10px;color:var(--accent);font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer">⬇️ הורד CSV</button>
-      </div>`;
-  },
-
-  async renameWallet() {
-    const name = document.getElementById('walletNameInput')?.value.trim();
-    if (!name||!this.activeWalletId) return;
-    const {error} = await this.db.from('wallets').update({name}).eq('id',this.activeWalletId);
-    if (error) { this.toast('שגיאה',true); return; }
-    if (this.activeWallet) this.activeWallet.name=name;
-    this.toast('✅ שם הארנק עודכן');
-    this._updateWalletBadge();
-  },
-
-  exportCSV() {
-    const all=[...this.vouchers,...this.archived];
-    const header='שם חנות,קטגוריה,יתרה,ערך מקורי,תאריך תפוגה,קוד,נוצל,בארכיון\n';
-    const rows=all.map(v=>[
-      `"${(v.brand_name||'').replace(/"/g,'""')}"`,
-      `"${(v.category||'').replace(/"/g,'""')}"`,
-      v.current_balance||0,
-      v.original_value||0,
-      v.expiry_date||'',
-      `"${(v.code||'').replace(/"/g,'""')}"`,
-      (v.original_value||0)-(v.current_balance||0),
-      v.archived?'כן':'לא'
-    ].join(',')).join('\n');
-    const blob=new Blob(['\uFEFF'+header+rows],{type:'text/csv;charset=utf-8'});
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);
-    a.download='vouchers-export.csv';
-    a.click();
-    this.toast('✅ הורד בהצלחה');
-  },
-  _getSuperCatalog() {
-    const custom = JSON.parse(localStorage.getItem('superCatalogEdits')||'{}');
-    const result = {};
-    Object.entries(SUPER_CATALOG).forEach(([k,v])=>{
-      result[k] = custom[k]!==undefined ? [...(custom[k]||[])] : [...v];
-    });
-    Object.entries(custom).forEach(([k,v])=>{
-      if (!(k in SUPER_CATALOG)) result[k]=v||[];
-    });
-    return Object.fromEntries(Object.entries(result).filter(([,v])=>v&&v.length>0));
-  },
-  _saveSuperCatalog(catalog) {
-    const edits = {...catalog};
-    Object.keys(SUPER_CATALOG).forEach(k=>{ if (!(k in catalog)) edits[k]=[]; });
-    localStorage.setItem('superCatalogEdits', JSON.stringify(edits));
-    // update runtime
-    ALL_SUPER_NAMES.length=0;
-    Object.keys(catalog).forEach(k=>ALL_SUPER_NAMES.push(k));
-  },
-  openSuperBrandEdit(name) {
-    const isNew = name==='__new__';
-    const catalog = this._getSuperCatalog();
-    document.getElementById('sbEditModal').classList.add('open');
-    document.getElementById('sbEditTitle').textContent = isNew?'➕ שובר-על חדש':`✏️ עריכת ${name}`;
-    document.getElementById('sbEditName').value = isNew?'':name;
-    document.getElementById('sbEditName').readOnly = !isNew&&(name in SUPER_CATALOG);
-    document.getElementById('sbEditStores').value = (catalog[name]||[]).join('\n');
-    document.getElementById('sbDeleteBtn').style.display = isNew?'none':'block';
-    this._editingSB = name;
-  },
-  closeSuperBrandEdit() {
-    document.getElementById('sbEditModal').classList.remove('open');
-    this._editingSB=null;
-  },
-  saveSuperBrandEdit() {
-    const name = document.getElementById('sbEditName').value.trim();
-    if (!name) { this.toast('הזן שם לשובר-על',true); return; }
-    const stores = document.getElementById('sbEditStores').value
-      .split(/[\n,،]+/).map(s=>s.trim()).filter(Boolean);
-    if (!stores.length) { this.toast('הוסף לפחות חנות אחת',true); return; }
-    const catalog = this._getSuperCatalog();
-    if (this._editingSB&&this._editingSB!=='__new__'&&this._editingSB!==name) delete catalog[this._editingSB];
-    catalog[name]=stores;
-    this._saveSuperCatalog(catalog);
-    this._refreshBrandlist();
-    this.closeSuperBrandEdit();
-    const adminOpen = document.getElementById('adminPanel')?.style.display==='flex';
-    if (adminOpen) this.renderAdmin(); else this.renderSettings();
-    this.toast('✅ שובר-על עודכן');
-  },
-  deleteSuperBrand() {
-    const name=this._editingSB;
-    if (!name||name==='__new__') return;
-    if (!confirm(`למחוק "${name}" מרשימת שוברי-העל?`)) return;
-    const catalog=this._getSuperCatalog();
-    delete catalog[name];
-    this._saveSuperCatalog(catalog);
-    this._refreshBrandlist();
-    this.closeSuperBrandEdit();
-    const adminOpen = document.getElementById('adminPanel')?.style.display==='flex';
-    if (adminOpen) this.renderAdmin(); else this.renderSettings();
-    this.toast('🗑️ נמחק');
-  },
-  addStoresToSuperBrand(name) {
-    const safeId=name.replace(/[^a-zA-Z0-9]/g,'_');
-    const inp=document.getElementById('sbbulk_'+safeId);
-    if (!inp||!inp.value.trim()) return;
-    const newStores=inp.value.split(/[\n,،]+/).map(s=>s.trim()).filter(Boolean);
-    if (!newStores.length) return;
-    const catalog=this._getSuperCatalog();
-    catalog[name]=[...new Set([...(catalog[name]||[]),...newStores])];
-    this._saveSuperCatalog(catalog);
-    inp.value='';
-    // re-render whichever screen is currently active
-    const adminOpen = document.getElementById('adminPanel')?.style.display==='flex';
-    if (adminOpen) this.renderAdmin(); else this.renderSettings();
-    this.toast(`✅ נוספו ${newStores.length} חנויות`);
-  },
-  removeStoreFromSuperBrand(superName,store) {
-    const catalog=this._getSuperCatalog();
-    catalog[superName]=(catalog[superName]||[]).filter(s=>s!==store);
-    if (!catalog[superName].length) delete catalog[superName];
-    this._saveSuperCatalog(catalog);
-    const adminOpen = document.getElementById('adminPanel')?.style.display==='flex';
-    if (adminOpen) this.renderAdmin(); else this.renderSettings();
-  },
-
-  // ── PROFILE ──────────────────────────────
-  async saveProfile() {
-    const name  = document.getElementById('profileName')?.value.trim()||'';
-    const phone = document.getElementById('profilePhone')?.value.trim()||'';
-    try {
-      await this.db.auth.updateUser({data:{display_name:name, phone}});
-      this.toast('✅ הפרופיל עודכן');
-    } catch(e) { this.toast('שגיאה: '+e.message, true); }
-  },
-  async changePassword() {
-    const p1 = document.getElementById('newPass1')?.value||'';
-    const p2 = document.getElementById('newPass2')?.value||'';
-    if (p1.length < 6) { this.toast('סיסמה לפחות 6 תווים',true); return; }
-    if (p1 !== p2) { this.toast('הסיסמאות אינן תואמות',true); return; }
-    const {error} = await this.db.auth.updateUser({password:p1});
-    if (error) { this.toast('שגיאה: '+error.message,true); return; }
-    this.toast('✅ הסיסמה עודכנה');
-    document.getElementById('newPass1').value='';
-    document.getElementById('newPass2').value='';
-  },
-
-  renderSettings() {
-    const body = document.getElementById('settingsBody');
-    if (!body) return;
-    const isOwner = this.activeWallet?.owner_id === this.user?.id;
-    const meta = this.user?.user_metadata||{};
-    const email = this._esc(this.user?.email||'');
-    const name  = this._esc(meta.display_name||'');
-    const phone = this._esc(meta.phone||'');
-
-    const invHtml = this.pendingInvites.map(inv=>`
-      <div class="invite-banner">
-        <div class="inv-icon">📨</div>
-        <div class="inv-body">
-          <strong>${this._esc(inv.wallets?.name||'ארנק')}</strong>
-          <p>הוזמנת לשתף ארנק</p>
-          <div class="inv-actions">
-            <button class="inv-accept" onclick="A.acceptInvite('${inv.id}')">✅ קבל</button>
-            <button class="inv-decline" onclick="A.declineInvite('${inv.id}')">❌ דחה</button>
-          </div>
-        </div>
-      </div>`).join('');
-
-    body.innerHTML = `
-      ${invHtml ? `<div class="settings-section"><h3>📨 הזמנות ממתינות</h3>${invHtml}</div>` : ''}
-
-      <div class="settings-section">
-        <h3>👤 פרטי פרופיל</h3>
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px">
-          <div class="profile-row">
-            <span class="profile-label">אימייל</span>
-            <span class="profile-val" style="color:var(--muted)">${email}</span>
-          </div>
-          <div class="profile-row">
-            <span class="profile-label">שם</span>
-            <input id="profileName" value="${name}" placeholder="השם שלך" style="flex:1;padding:7px 10px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:var(--font);font-size:13px">
-          </div>
-          <div class="profile-row">
-            <span class="profile-label">טלפון</span>
-            <input id="profilePhone" value="${phone}" placeholder="050-000-0000" inputmode="tel" style="flex:1;padding:7px 10px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:var(--font);font-size:13px">
-          </div>
-          <button onclick="A.saveProfile()" class="btn btn-primary" style="width:100%;margin-top:14px;padding:11px">שמור פרטים</button>
-        </div>
-      </div>
-
-      <div class="settings-section">
-        <h3>🔒 שינוי סיסמה</h3>
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px">
-          <input type="password" id="newPass1" placeholder="סיסמה חדשה" autocomplete="new-password"
-            style="padding:11px 13px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--font);font-size:14px">
-          <input type="password" id="newPass2" placeholder="אימות סיסמה חדשה" autocomplete="new-password"
-            style="padding:11px 13px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--font);font-size:14px">
-          <button onclick="A.changePassword()" class="btn btn-primary" style="padding:11px">עדכן סיסמה</button>
-        </div>
-      </div>
-
-      ${isOwner ? `
-      <div class="settings-section">
-        <button onclick="A.openAdmin()" style="width:100%;padding:16px;background:linear-gradient(135deg,rgba(0,200,255,.12),rgba(0,200,255,.06));border:1px solid rgba(0,200,255,.35);border-radius:14px;color:var(--shared);font-family:var(--font);font-size:15px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px">
-          🛡️ פאנל מנהל ראשי
-          <span style="font-size:11px;background:rgba(0,200,255,.2);padding:2px 8px;border-radius:6px">רק לך</span>
-        </button>
-      </div>` : ''}
-
-      <div class="settings-section">
-        <button onclick="A.logout()" style="width:100%;padding:13px;background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.25);border-radius:12px;color:var(--danger);font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer">
-          🚪 התנתק
-        </button>
-        <button onclick="A.runDbCheck()" style="width:100%;margin-top:8px;padding:11px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:12px;color:var(--muted);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer">
-          🔍 בדוק חיבור לבסיס הנתונים
-        </button>
-      </div>`;
-  },
-
-
-};
-
-document.addEventListener('DOMContentLoaded', ()=>{
-  A.init();
-  document.getElementById('addModal').addEventListener('click', e=>{
-    if (e.target===document.getElementById('addModal')) A.closeAdd();
-  });
-  document.getElementById('brandModal').addEventListener('click', e=>{
-    if (e.target===document.getElementById('brandModal')) A.closeBrandModal();
-  });
-  document.getElementById('sbEditModal').addEventListener('click', e=>{
-    if (e.target===document.getElementById('sbEditModal')) A.closeSuperBrandEdit();
-  });
-  document.getElementById('brandPickerModal').addEventListener('click', e=>{
-    if (e.target===document.getElementById('brandPickerModal')) A.closeBrandPicker();
-  });
-  document.getElementById('newBrandInput').addEventListener('keydown', e=>{
-    if (e.key==='Enter') A.saveBrand();
-  });
-  // Event delegation for admin panel — safe alternative to inline onclick with Hebrew strings
-  document.getElementById('adminBody').addEventListener('click', e=>{
-    const editBtn = e.target.closest('.sb-edit-btn');
-    const addBtn  = e.target.closest('.sb-add-btn');
-    if (editBtn) { A.openSuperBrandEdit(editBtn.dataset.sbname); return; }
-    if (addBtn) {
-      const sid = addBtn.dataset.sbsid;
-      const inp = document.getElementById('sbbulk_'+sid);
-      if (inp) A.addStoresToSuperBrand(inp.dataset.sbname);
-    }
-  });
-});
-</script>
+
+    <script>
+        const app = {
+            db: null,
+            user: null,
+            isAdmin: false,
+            allVouchers: [],
+            allUsers: [],
+            filteredVouchers: [],
+            editingId: null,
+            sidebarOpen: false,
+
+            async init() {
+                this.db = window.supabase.createClient(
+                    'https://kgjdapoetwbtbqwplxka.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnamRhcG9ldHdidGJxd3BseGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTUyMzgsImV4cCI6MjA4ODg5MTIzOH0.3Gq9VoNVLA2sCfpNEPDBpXdiaE1WllFmDD1gGfjuYJU'
+                );
+
+                const { data } = await this.db.auth.getSession();
+                if (data?.session) {
+                    this.user = data.session.user;
+                    await this.checkAdminStatus();
+                    this.showApp();
+                    this.loadData();
+                }
+
+                this.db.auth.onAuthStateChange((event, session) => {
+                    if (session) {
+                        this.user = session.user;
+                        this.checkAdminStatus();
+                        this.showApp();
+                        this.loadData();
+                    } else {
+                        this.user = null;
+                    }
+                });
+            },
+
+            async checkAdminStatus() {
+                // ✅ בדוק אם המשתמש הוא Admin
+                const { data, error } = await this.db
+                    .from('vouchers')
+                    .select('is_admin')
+                    .eq('user_id', this.user.id)
+                    .single();
+
+                if (data?.is_admin) {
+                    this.isAdmin = true;
+                    document.getElementById('adminBadge').style.display = 'block';
+                    document.getElementById('adminSection').style.display = 'block';
+                } else {
+                    document.getElementById('adminSection').style.display = 'none';
+                }
+            },
+
+            async loadData() {
+                if (this.isAdmin) {
+                    await this.loadAllVouchers();
+                    await this.loadAllUsers();
+                } else {
+                    await this.loadMyVouchers();
+                }
+                this.renderDashboard();
+            },
+
+            async loadMyVouchers() {
+                const { data } = await this.db
+                    .from('vouchers')
+                    .select('*')
+                    .eq('user_id', this.user.id)
+                    .order('created_at', { ascending: false });
+
+                this.allVouchers = data || [];
+                this.filteredVouchers = [...this.allVouchers];
+            },
+
+            async loadAllVouchers() {
+                const { data } = await this.db
+                    .from('vouchers')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                this.allVouchers = data || [];
+                this.filteredVouchers = [...this.allVouchers];
+            },
+
+            async loadAllUsers() {
+                const { data } = await this.db.auth.admin.listUsers();
+                this.allUsers = data?.users || [];
+                this.renderUsers();
+            },
+
+            login() {
+                const email = document.getElementById('loginEmail').value;
+                const pass = document.getElementById('loginPassword').value;
+                if (!email || !pass) { alert('מלא את כל השדות'); return; }
+
+                this.db.auth.signInWithPassword({ email, password: pass }).then(({ error }) => {
+                    if (error) alert('שגיאה: ' + error.message);
+                });
+            },
+
+            register() {
+                const email = document.getElementById('regEmail').value;
+                const pass = document.getElementById('regPass').value;
+                const pass2 = document.getElementById('regPass2').value;
+                if (!email || !pass || !pass2) { alert('מלא את כל השדות'); return; }
+                if (pass !== pass2) { alert('הסיסמאות לא תואמות'); return; }
+
+                this.db.auth.signUp({ email, password: pass }).then(({ error }) => {
+                    if (error) { alert('שגיאה: ' + error.message); return; }
+                    alert('✅ הרישום הצליח! התחבר עכשיו.');
+                    this.switchForm('login');
+                });
+            },
+
+            logout() {
+                this.db.auth.signOut();
+                location.reload();
+            },
+
+            switchForm(form) {
+                document.getElementById('loginForm').style.display = form === 'login' ? 'flex' : 'none';
+                document.getElementById('registerForm').style.display = form === 'register' ? 'flex' : 'none';
+            },
+
+            showApp() {
+                document.getElementById('authScreen').style.display = 'none';
+                document.getElementById('appScreen').style.display = 'flex';
+            },
+
+            toggleSidebar() {
+                this.sidebarOpen = !this.sidebarOpen;
+                document.getElementById('sidebar').classList.toggle('active');
+                document.getElementById('content').classList.toggle('sidebar-open');
+            },
+
+            switchTab(tabName) {
+                document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+                document.getElementById('tab-' + tabName)?.style.display = 'block';
+
+                const titles = {
+                    'dashboard': 'דשבורד',
+                    'my-vouchers': 'שוברים שלי',
+                    'statistics': 'סטטיסטיקה',
+                    'admin-dashboard': 'ניהול מרכזי',
+                    'all-vouchers': 'כל השוברים',
+                    'users': 'משתמשים',
+                    'import': 'יבוא'
+                };
+                document.getElementById('pageTitle').textContent = titles[tabName] || 'תפריט';
+
+                if (tabName === 'dashboard') this.renderDashboard();
+                if (tabName === 'admin-dashboard') this.renderAdminDashboard();
+                if (tabName === 'statistics') this.renderStatistics();
+                if (tabName === 'my-vouchers') this.renderMyVouchers();
+                if (tabName === 'all-vouchers') this.renderAllVouchers();
+            },
+
+            async addVoucher() {
+                const brand = document.getElementById('brandInput').value;
+                const amt = parseFloat(document.getElementById('amountInput').value);
+                const date = document.getElementById('dateInput').value;
+                const cat = document.getElementById('categoryInput').value;
+                const code = document.getElementById('codeInput').value;
+                const userId = this.isAdmin ? document.getElementById('userSelectDropdown').value : this.user.id;
+
+                if (!brand || !amt || !date) { alert('מלא שדות חובה'); return; }
+
+                if (this.editingId) {
+                    const { error } = await this.db.from('vouchers').update({
+                        brand_name: brand,
+                        category: cat || 'קניות',
+                        original_value: amt,
+                        expiry_date: date,
+                        code: code || null
+                    }).eq('id', this.editingId);
+
+                    if (error) { alert('שגיאה'); return; }
+                    this.editingId = null;
+                } else {
+                    const { error } = await this.db.from('vouchers').insert([{
+                        user_id: userId,
+                        brand_name: brand,
+                        category: cat || 'קניות',
+                        original_value: amt,
+                        current_balance: amt,
+                        expiry_date: date,
+                        code: code || null,
+                        tags: [],
+                        is_admin: this.isAdmin ? 1 : 0
+                    }]);
+
+                    if (error) { alert('שגיאה: ' + error.message); return; }
+                }
+
+                this.closeAddModal();
+                this.loadData();
+            },
+
+            async deleteVoucher(id) {
+                if (!confirm('האם אתה בטוח?')) return;
+                const { error } = await this.db.from('vouchers').delete().eq('id', id);
+                if (error) { alert('שגיאה'); return; }
+                this.loadData();
+            },
+
+            openAddModal() {
+                document.getElementById('modalTitle').textContent = 'הוסף שובר';
+                document.getElementById('userSelect').style.display = this.isAdmin ? 'block' : 'none';
+                
+                if (this.isAdmin) {
+                    const select = document.getElementById('userSelectDropdown');
+                    select.innerHTML = this.allUsers.map(u => `<option value="${u.id}">${u.email}</option>`).join('');
+                }
+
+                document.getElementById('addModal').classList.add('active');
+            },
+
+            closeAddModal() {
+                document.getElementById('addModal').classList.remove('active');
+                document.getElementById('brandInput').value = '';
+                document.getElementById('amountInput').value = '';
+                document.getElementById('dateInput').value = '';
+                document.getElementById('codeInput').value = '';
+                document.getElementById('categoryInput').value = '';
+                this.editingId = null;
+            },
+
+            filter() {
+                const q = document.getElementById('searchInput')?.value.toLowerCase() || '';
+                this.filteredVouchers = this.allVouchers.filter(v => 
+                    v.brand_name.toLowerCase().includes(q)
+                );
+                this.renderMyVouchers();
+                this.renderAllVouchers();
+            },
+
+            filterByStatus(status) {
+                if (!status) { this.filteredVouchers = [...this.allVouchers]; return; }
+
+                const now = new Date();
+                this.filteredVouchers = this.allVouchers.filter(v => {
+                    const daysLeft = Math.ceil((new Date(v.expiry_date) - now) / (1000 * 60 * 60 * 24));
+                    if (status === 'active') return daysLeft > 7;
+                    if (status === 'expiring') return daysLeft >= 0 && daysLeft <= 7;
+                    if (status === 'expired') return daysLeft < 0;
+                });
+            },
+
+            daysTo(date) {
+                const d = new Date(date);
+                const now = new Date();
+                return Math.ceil((d - now) / (1000 * 60 * 60 * 24));
+            },
+
+            getExpiry(date) {
+                const d = this.daysTo(date);
+                if (d < 0) return 'פג תוקף';
+                if (d === 0) return 'היום';
+                if (d === 1) return 'מחר';
+                return `${d} ימים`;
+            },
+
+            getExpiryClass(date) {
+                const d = this.daysTo(date);
+                if (d < 0) return 'expired';
+                if (d >= 0 && d <= 7) return 'soon';
+                return '';
+            },
+
+            renderDashboard() {
+                const expiringIn7 = this.allVouchers.filter(v => {
+                    const d = this.daysTo(v.expiry_date);
+                    return d >= 0 && d <= 7;
+                });
+
+                const total = this.allVouchers.reduce((s, v) => s + v.current_balance, 0);
+                const count = this.allVouchers.length;
+
+                document.getElementById('dashboardStats').innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-value">₪${total}</div>
+                        <div class="stat-label">סה"כ יתרה</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${count}</div>
+                        <div class="stat-label">שוברים כ"ס</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${expiringIn7.length}</div>
+                        <div class="stat-label">קרובים לפוג</div>
+                    </div>
+                `;
+
+                document.getElementById('expiringVouchers').innerHTML = expiringIn7.length === 0 
+                    ? '<div class="empty-state">אין שוברים קרובים לפוג</div>'
+                    : expiringIn7.map(v => this.renderVoucherCard(v)).join('');
+            },
+
+            renderAdminDashboard() {
+                const totalVal = this.allVouchers.reduce((s, v) => s + v.original_value, 0);
+                const usedVal = this.allVouchers.reduce((s, v) => s + (v.original_value - v.current_balance), 0);
+
+                document.getElementById('adminStats').innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-value">${this.allVouchers.length}</div>
+                        <div class="stat-label">שוברים בסך הכל</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">₪${totalVal}</div>
+                        <div class="stat-label">ערך כולל</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">₪${usedVal}</div>
+                        <div class="stat-label">בשימוש</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${this.allUsers.length}</div>
+                        <div class="stat-label">משתמשים</div>
+                    </div>
+                `;
+
+                const expiring = this.allVouchers.filter(v => {
+                    const d = this.daysTo(v.expiry_date);
+                    return d >= 0 && d <= 7;
+                });
+
+                document.getElementById('adminAlerts').innerHTML = `
+                    <div style="padding: 12px; background: rgba(255,170,0,0.2); border-left: 3px solid #ffaa00; border-radius: 4px; margin-bottom: 8px;">
+                        <strong>${expiring.length}</strong> שוברים קרובים לפוג
+                    </div>
+                    <div style="padding: 12px; background: rgba(255,68,68,0.2); border-left: 3px solid #ff6666; border-radius: 4px;">
+                        <strong>${this.allVouchers.filter(v => this.daysTo(v.expiry_date) < 0).length}</strong> שוברים פגי תוקף
+                    </div>
+                `;
+            },
+
+            renderStatistics() {
+                const byCategory = {};
+                this.allVouchers.forEach(v => {
+                    byCategory[v.category] = (byCategory[v.category] || 0) + v.original_value;
+                });
+
+                const html = Object.entries(byCategory).map(([cat, val]) => 
+                    `<div style="display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <span>${cat || 'ללא קטגוריה'}</span>
+                        <strong>₪${val}</strong>
+                    </div>`
+                ).join('');
+
+                document.getElementById('statsAnalysis').innerHTML = html;
+            },
+
+            renderMyVouchers() {
+                const html = this.filteredVouchers.length === 0
+                    ? '<div class="empty-state"><div class="empty-state-icon">📭</div><div>אין שוברים</div></div>'
+                    : this.filteredVouchers.map(v => this.renderVoucherCard(v, true)).join('');
+                document.getElementById('myVouchersList').innerHTML = html;
+            },
+
+            renderAllVouchers() {
+                const html = this.filteredVouchers.length === 0
+                    ? '<div class="empty-state"><div class="empty-state-icon">📭</div><div>אין שוברים</div></div>'
+                    : this.filteredVouchers.map(v => this.renderVoucherCard(v, this.isAdmin)).join('');
+                document.getElementById('allVouchersList').innerHTML = html;
+            },
+
+            renderVoucherCard(v, showActions = false) {
+                return `
+                    <div class="voucher-item">
+                        <div class="voucher-info">
+                            <div class="voucher-balance">₪${v.current_balance}</div>
+                            <div class="voucher-name">${v.brand_name}</div>
+                            <div class="voucher-category">${v.category}</div>
+                        </div>
+                        <div class="voucher-expiry ${this.getExpiryClass(v.expiry_date)}">${this.getExpiry(v.expiry_date)}</div>
+                        ${showActions ? `<div class="voucher-actions">
+                            <button class="icon-btn" onclick="app.editVoucher('${v.id}')">✏️</button>
+                            <button class="icon-btn danger" onclick="app.deleteVoucher('${v.id}')">🗑️</button>
+                        </div>` : ''}
+                    </div>
+                `;
+            },
+
+            editVoucher(id) {
+                const v = this.allVouchers.find(x => x.id === id);
+                if (!v) return;
+                this.editingId = id;
+                document.getElementById('modalTitle').textContent = 'ערוך שובר';
+                document.getElementById('brandInput').value = v.brand_name;
+                document.getElementById('amountInput').value = v.original_value;
+                document.getElementById('dateInput').value = v.expiry_date;
+                document.getElementById('codeInput').value = v.code || '';
+                document.getElementById('categoryInput').value = v.category;
+                document.getElementById('addModal').classList.add('active');
+            },
+
+            renderUsers() {
+                const html = this.allUsers.map(u => `
+                    <div style="padding: 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; margin-bottom: 12px;">
+                        <div style="font-weight: 700; margin-bottom: 4px;">${u.email}</div>
+                        <div style="font-size: 12px; color: #888;">מצטרף: ${new Date(u.created_at).toLocaleDateString('he-IL')}</div>
+                    </div>
+                `).join('');
+                document.getElementById('usersList').innerHTML = html;
+            },
+
+            exportCSV() {
+                const headers = ['שם', 'קטגוריה', 'סכום', 'יתרה', 'תאריך תפוגה'];
+                const rows = this.allVouchers.map(v => [
+                    v.brand_name,
+                    v.category,
+                    v.original_value,
+                    v.current_balance,
+                    v.expiry_date
+                ]);
+
+                const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `vouchers-${new Date().toISOString().split('T')[0]}.csv`;
+                link.click();
+            },
+
+            importCSV() {
+                const text = document.getElementById('csvInput').value;
+                if (!text) { alert('הדבק נתונים'); return; }
+
+                const lines = text.split('\n').slice(1);
+                const vouchers = lines.filter(l => l.trim()).map(line => {
+                    const [name, cat, amt, date] = line.split(',').map(s => s.trim());
+                    return {
+                        user_id: this.user.id,
+                        brand_name: name,
+                        category: cat,
+                        original_value: parseFloat(amt),
+                        current_balance: parseFloat(amt),
+                        expiry_date: date,
+                        code: null,
+                        tags: [],
+                        is_admin: this.isAdmin ? 1 : 0
+                    };
+                });
+
+                this.db.from('vouchers').insert(vouchers).then(({ error }) => {
+                    if (error) { alert('שגיאה'); return; }
+                    alert(`✅ יובאו ${vouchers.length} שוברים`);
+                    document.getElementById('csvInput').value = '';
+                    this.loadData();
+                });
+            }
+        };
+
+        app.init();
+    </script>
 </body>
 </html>
